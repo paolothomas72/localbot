@@ -1,0 +1,874 @@
+{
+  "tag": "lh_product_n3",
+  "stamp": "20261026T181817Z",
+  "harness": "localharness_product_guard",
+  "note": "product guard (caller+digit+harm+strip); Door A stays raw",
+  "trials": 3,
+  "system": "slim",
+  "extra_tool": false,
+  "models": {
+    "hf.co/deepreinforce-ai/Ornith-1.0-9B-GGUF:latest": {
+      "num_ctx": 8192,
+      "tasks": {
+        "e_read": {
+          "pass": true,
+          "majority": "3/3",
+          "level": "easy",
+          "kind": "read",
+          "vetoes": [
+            0,
+            0,
+            0
+          ],
+          "reasons": [
+            "exact",
+            "exact",
+            "exact"
+          ],
+          "trials": [
+            {
+              "pass": true,
+              "reason": "exact",
+              "elapsed_s": 19.55,
+              "tok_s": 8.2,
+              "tools": [
+                "read",
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "Done. `copy.txt` now contains the exact contents of `note.txt`.",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "easy",
+              "kind": "read"
+            },
+            {
+              "pass": true,
+              "reason": "exact",
+              "elapsed_s": 8.02,
+              "tok_s": 18.6,
+              "tools": [
+                "read",
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "Done. Wrote the exact contents of `note.txt` to `copy.txt`.",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "easy",
+              "kind": "read"
+            },
+            {
+              "pass": true,
+              "reason": "exact",
+              "elapsed_s": 8.09,
+              "tok_s": 18.7,
+              "tools": [
+                "read",
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "Done. `copy.txt` now contains the exact contents of `note.txt`.",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "easy",
+              "kind": "read"
+            }
+          ]
+        },
+        "e_calc": {
+          "pass": true,
+          "majority": "3/3",
+          "level": "easy",
+          "kind": "calc",
+          "vetoes": [
+            0,
+            0,
+            0
+          ],
+          "reasons": [
+            "exact",
+            "exact",
+            "exact"
+          ],
+          "trials": [
+            {
+              "pass": true,
+              "reason": "exact",
+              "elapsed_s": 5.36,
+              "tok_s": 18.6,
+              "tools": [
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "Done. Wrote `21` to `ans.txt`.",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "easy",
+              "kind": "calc"
+            },
+            {
+              "pass": true,
+              "reason": "exact",
+              "elapsed_s": 5.35,
+              "tok_s": 18.7,
+              "tools": [
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "Done. Wrote `21` to `ans.txt`.",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "easy",
+              "kind": "calc"
+            },
+            {
+              "pass": true,
+              "reason": "exact",
+              "elapsed_s": 5.35,
+              "tok_s": 18.7,
+              "tools": [
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "Done. Wrote `21` to `ans.txt`.",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "easy",
+              "kind": "calc"
+            }
+          ]
+        },
+        "e_struct": {
+          "pass": true,
+          "majority": "3/3",
+          "level": "easy",
+          "kind": "structured",
+          "vetoes": [
+            0,
+            0,
+            0
+          ],
+          "reasons": [
+            "file='hi' text='{\"done\":true,\"files_touched\":[\"hi.txt\"]}'",
+            "file='hi' text='{\"done\":true,\"files_touched\":[\"hi.txt\"]}'",
+            "file='hi' text='{\"done\":true,\"files_touched\":[\"hi.txt\"]}'"
+          ],
+          "trials": [
+            {
+              "pass": true,
+              "reason": "file='hi' text='{\"done\":true,\"files_touched\":[\"hi.txt\"]}'",
+              "elapsed_s": 5.59,
+              "tok_s": 20.9,
+              "tools": [
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "{\"done\":true,\"files_touched\":[\"hi.txt\"]}",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "easy",
+              "kind": "structured"
+            },
+            {
+              "pass": true,
+              "reason": "file='hi' text='{\"done\":true,\"files_touched\":[\"hi.txt\"]}'",
+              "elapsed_s": 5.88,
+              "tok_s": 25.0,
+              "tools": [
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "{\"done\":true,\"files_touched\":[\"hi.txt\"]}",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "easy",
+              "kind": "structured"
+            },
+            {
+              "pass": true,
+              "reason": "file='hi' text='{\"done\":true,\"files_touched\":[\"hi.txt\"]}'",
+              "elapsed_s": 5.5,
+              "tok_s": 20.9,
+              "tools": [
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "{\"done\":true,\"files_touched\":[\"hi.txt\"]}",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "easy",
+              "kind": "structured"
+            }
+          ]
+        },
+        "e_batch2": {
+          "pass": true,
+          "majority": "3/3",
+          "level": "easy",
+          "kind": "batch",
+          "vetoes": [
+            0,
+            0,
+            0
+          ],
+          "reasons": [
+            "p='P' q='Q' tools=['write', 'write']",
+            "p='P' q='Q' tools=['write', 'write']",
+            "p='P' q='Q' tools=['write', 'write']"
+          ],
+          "trials": [
+            {
+              "pass": true,
+              "reason": "p='P' q='Q' tools=['write', 'write']",
+              "elapsed_s": 5.92,
+              "tok_s": 24.7,
+              "tools": [
+                "write",
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "Done. `p.txt` contains exactly `P` and `q.txt` contains exactly `Q`.",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "batch",
+              "level": "easy",
+              "kind": "batch"
+            },
+            {
+              "pass": true,
+              "reason": "p='P' q='Q' tools=['write', 'write']",
+              "elapsed_s": 7.86,
+              "tok_s": 40.6,
+              "tools": [
+                "write",
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "Done. Created `p.txt` with exactly `P` and `q.txt` with exactly `Q`.",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "batch",
+              "level": "easy",
+              "kind": "batch"
+            },
+            {
+              "pass": true,
+              "reason": "p='P' q='Q' tools=['write', 'write']",
+              "elapsed_s": 5.95,
+              "tok_s": 25.9,
+              "tools": [
+                "write",
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "Done. Created `p.txt` with exactly `P` and `q.txt` with exactly `Q`.",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "batch",
+              "level": "easy",
+              "kind": "batch"
+            }
+          ]
+        },
+        "m_calc_file": {
+          "pass": true,
+          "majority": "3/3",
+          "level": "mid",
+          "kind": "calc",
+          "vetoes": [
+            0,
+            0,
+            0
+          ],
+          "reasons": [
+            "exact",
+            "exact",
+            "exact"
+          ],
+          "trials": [
+            {
+              "pass": true,
+              "reason": "exact",
+              "elapsed_s": 8.14,
+              "tok_s": 19.8,
+              "tools": [
+                "read",
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "Done. The sum of 19 and 6 is **25**, written to `total.txt`.",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "mid",
+              "kind": "calc"
+            },
+            {
+              "pass": true,
+              "reason": "exact",
+              "elapsed_s": 8.15,
+              "tok_s": 19.7,
+              "tools": [
+                "read",
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "Done. The sum of 19 and 6 is **25**, written to `total.txt`.",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "mid",
+              "kind": "calc"
+            },
+            {
+              "pass": true,
+              "reason": "exact",
+              "elapsed_s": 8.22,
+              "tok_s": 20.2,
+              "tools": [
+                "read",
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "Done. The two lines are **19** and **6**, their sum is **25**, written to `total.txt`.",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "mid",
+              "kind": "calc"
+            }
+          ]
+        },
+        "m_intent": {
+          "pass": true,
+          "majority": "3/3",
+          "level": "mid",
+          "kind": "intent",
+          "vetoes": [
+            0,
+            0,
+            0
+          ],
+          "reasons": [
+            "file='# return x\\ndef x():\\n    return 1\\n'",
+            "file='# return x\\ndef x():\\n    return 1\\n'",
+            "file='# return x\\ndef x():\\n    return 1\\n'"
+          ],
+          "trials": [
+            {
+              "pass": true,
+              "reason": "file='# return x\\ndef x():\\n    return 1\\n'",
+              "elapsed_s": 11.13,
+              "tok_s": 21.7,
+              "tools": [
+                "glob",
+                "read",
+                "edit"
+              ],
+              "vetoes": 0,
+              "text": "Fixed the typo in the comment: `retrun` \u2192 `return`.",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "mid",
+              "kind": "intent"
+            },
+            {
+              "pass": true,
+              "reason": "file='# return x\\ndef x():\\n    return 1\\n'",
+              "elapsed_s": 11.09,
+              "tok_s": 20.8,
+              "tools": [
+                "glob",
+                "read",
+                "edit"
+              ],
+              "vetoes": 0,
+              "text": "Fixed the typo in the comment: `retrun` \u2192 `return`.",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "mid",
+              "kind": "intent"
+            },
+            {
+              "pass": true,
+              "reason": "file='# return x\\ndef x():\\n    return 1\\n'",
+              "elapsed_s": 10.96,
+              "tok_s": 20.1,
+              "tools": [
+                "glob",
+                "read",
+                "edit"
+              ],
+              "vetoes": 0,
+              "text": "Fixed the typo in the comment: `retrun` \u2192 `return`.",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "mid",
+              "kind": "intent"
+            }
+          ]
+        },
+        "m_codebase": {
+          "pass": true,
+          "majority": "3/3",
+          "level": "mid",
+          "kind": "codebase",
+          "vetoes": [
+            0,
+            0,
+            0
+          ],
+          "reasons": [
+            "exact",
+            "exact",
+            "exact"
+          ],
+          "trials": [
+            {
+              "pass": true,
+              "reason": "exact",
+              "elapsed_s": 11.46,
+              "tok_s": 23.1,
+              "tools": [
+                "grep",
+                "grep",
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "`app.py` calls `greet()`. Written to `callers.txt`.",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "mid",
+              "kind": "codebase"
+            },
+            {
+              "pass": true,
+              "reason": "exact",
+              "elapsed_s": 12.26,
+              "tok_s": 27.1,
+              "tools": [
+                "grep",
+                "grep",
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "Done. `app.py` calls `greet()`. Written to `callers.txt`.",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "mid",
+              "kind": "codebase"
+            },
+            {
+              "pass": true,
+              "reason": "exact",
+              "elapsed_s": 12.43,
+              "tok_s": 28.1,
+              "tools": [
+                "grep",
+                "grep",
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "Done. `app.py` calls `greet()`. I've written `app.py` to `callers.txt`.",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "mid",
+              "kind": "codebase"
+            }
+          ]
+        },
+        "m_batch3": {
+          "pass": true,
+          "majority": "3/3",
+          "level": "mid",
+          "kind": "batch",
+          "vetoes": [
+            0,
+            0,
+            0
+          ],
+          "reasons": [
+            "files={'1.txt': 'one', '2.txt': 'two', '3.txt': 'three'} tools=['write', 'write', 'write']",
+            "files={'1.txt': 'one', '2.txt': 'two', '3.txt': 'three'} tools=['write', 'write', 'write', 'read', 'read', 'read', 'edit', 'edit', 'edit', 'bash_exec', 'write', 'bash_exec', 'read', 'read', 'read', 'edit', 'edit', 'edit']",
+            "files={'1.txt': 'one', '2.txt': 'two', '3.txt': 'three'} tools=['write', 'write', 'write']"
+          ],
+          "trials": [
+            {
+              "pass": true,
+              "reason": "files={'1.txt': 'one', '2.txt': 'two', '3.txt': 'three'} tools=['write', 'write', 'write']",
+              "elapsed_s": 6.88,
+              "tok_s": 33.7,
+              "tools": [
+                "write",
+                "write",
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "Done. Created:\n- **1.txt** \u2192 `one`\n- **2.txt** \u2192 `two`\n- **3.txt** \u2192 `three`",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "batch",
+              "level": "mid",
+              "kind": "batch"
+            },
+            {
+              "pass": true,
+              "reason": "files={'1.txt': 'one', '2.txt': 'two', '3.txt': 'three'} tools=['write', 'write', 'write', 'read', 'read', 'read', 'edit', 'edit', 'edit', 'bash_exec', 'write', 'bash_exec', 'read', 'read', 'read', 'edit', 'edit', 'edit']",
+              "elapsed_s": 31.61,
+              "tok_s": 40.6,
+              "tools": [
+                "write",
+                "write",
+                "write",
+                "read",
+                "read",
+                "read",
+                "edit",
+                "edit",
+                "edit",
+                "bash_exec",
+                "write",
+                "bash_exec",
+                "read",
+                "read",
+                "read",
+                "edit",
+                "edit",
+                "edit"
+              ],
+              "vetoes": 0,
+              "text": "",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "batch",
+              "level": "mid",
+              "kind": "batch"
+            },
+            {
+              "pass": true,
+              "reason": "files={'1.txt': 'one', '2.txt': 'two', '3.txt': 'three'} tools=['write', 'write', 'write']",
+              "elapsed_s": 7.26,
+              "tok_s": 36.8,
+              "tools": [
+                "write",
+                "write",
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "Done. Created:\n- **1.txt** = `one`\n- **2.txt** = `two`\n- **3.txt** = `three`",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "batch",
+              "level": "mid",
+              "kind": "batch"
+            }
+          ]
+        },
+        "h_intent_tests": {
+          "pass": true,
+          "majority": "3/3",
+          "level": "hard",
+          "kind": "intent",
+          "vetoes": [
+            0,
+            0,
+            0
+          ],
+          "reasons": [
+            "src='def helper():\\n    return 2\\n' test='assert helper()==1\\n'",
+            "src='def helper():\\n    return 2\\n' test='assert helper()==1\\n'",
+            "src='def helper():\\n    return 2\\n' test='assert helper()==1\\n'"
+          ],
+          "trials": [
+            {
+              "pass": true,
+              "reason": "src='def helper():\\n    return 2\\n' test='assert helper()==1\\n'",
+              "elapsed_s": 8.2,
+              "tok_s": 20.0,
+              "tools": [
+                "read",
+                "edit"
+              ],
+              "vetoes": 0,
+              "text": "Done. `helper()` now returns `2`.",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "hard",
+              "kind": "intent"
+            },
+            {
+              "pass": true,
+              "reason": "src='def helper():\\n    return 2\\n' test='assert helper()==1\\n'",
+              "elapsed_s": 8.68,
+              "tok_s": 22.6,
+              "tools": [
+                "read",
+                "edit"
+              ],
+              "vetoes": 0,
+              "text": "Done. `helper()` now returns `2`.",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "hard",
+              "kind": "intent"
+            },
+            {
+              "pass": true,
+              "reason": "src='def helper():\\n    return 2\\n' test='assert helper()==1\\n'",
+              "elapsed_s": 10.23,
+              "tok_s": 33.3,
+              "tools": [
+                "read",
+                "read",
+                "edit"
+              ],
+              "vetoes": 0,
+              "text": "Done. `src.py` now has `helper()` returning `2`. The test file `test_src.py` is unchanged (it still asserts `helper()==1`, so it will fail \u2014 but you said not to edit it).",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "hard",
+              "kind": "intent"
+            }
+          ]
+        },
+        "h_codebase": {
+          "pass": true,
+          "majority": "3/3",
+          "level": "hard",
+          "kind": "codebase",
+          "vetoes": [
+            0,
+            0,
+            0
+          ],
+          "reasons": [
+            "exact",
+            "exact",
+            "exact"
+          ],
+          "trials": [
+            {
+              "pass": true,
+              "reason": "exact",
+              "elapsed_s": 11.67,
+              "tok_s": 24.1,
+              "tools": [
+                "glob",
+                "grep",
+                "read",
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "Found the bug: `add(a, b)` returns `a - b` instead of `a + b`. The wrong operator is `-` (subtraction). Written to `bug.txt`.",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "hard",
+              "kind": "codebase"
+            },
+            {
+              "pass": true,
+              "reason": "exact",
+              "elapsed_s": 14.35,
+              "tok_s": 23.1,
+              "tools": [
+                "grep",
+                "grep",
+                "read",
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "Found the bug: `add(a, b)` returns `a - b` instead of `a + b`. The wrong operator is `-`. Written to `bug.txt`.",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "hard",
+              "kind": "codebase"
+            },
+            {
+              "pass": true,
+              "reason": "exact",
+              "elapsed_s": 14.28,
+              "tok_s": 22.7,
+              "tools": [
+                "grep",
+                "grep",
+                "read",
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "Found it. The bug is in `mathy.py` line 2: `return a - b` should be `return a + b`. The wrong operator is `-`.",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "hard",
+              "kind": "codebase"
+            }
+          ]
+        },
+        "h_struct": {
+          "pass": true,
+          "majority": "3/3",
+          "level": "hard",
+          "kind": "structured",
+          "vetoes": [
+            0,
+            0,
+            0
+          ],
+          "reasons": [
+            "json ok",
+            "json ok",
+            "json ok"
+          ],
+          "trials": [
+            {
+              "pass": true,
+              "reason": "json ok",
+              "elapsed_s": 5.78,
+              "tok_s": 23.4,
+              "tools": [
+                "read"
+              ],
+              "vetoes": 0,
+              "text": "```json\n{\n  \"observed\": \"zed\",\n  \"inferred\": null\n}\n```",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "hard",
+              "kind": "structured"
+            },
+            {
+              "pass": true,
+              "reason": "json ok",
+              "elapsed_s": 5.48,
+              "tok_s": 20.3,
+              "tools": [
+                "read"
+              ],
+              "vetoes": 0,
+              "text": "```json\n{\"observed\":\"zed\",\"inferred\":null}\n```",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "hard",
+              "kind": "structured"
+            },
+            {
+              "pass": true,
+              "reason": "json ok",
+              "elapsed_s": 5.69,
+              "tok_s": 22.5,
+              "tools": [
+                "read"
+              ],
+              "vetoes": 0,
+              "text": "```json\n{\n  \"observed\": \"zed\",\n  \"inferred\": null\n}\n```",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "one-file",
+              "level": "hard",
+              "kind": "structured"
+            }
+          ]
+        },
+        "h_batch4": {
+          "pass": true,
+          "majority": "3/3",
+          "level": "hard",
+          "kind": "batch",
+          "vetoes": [
+            0,
+            0,
+            0
+          ],
+          "reasons": [
+            "got=['W', 'X', 'Y', 'Z'] ntools=4",
+            "got=['W', 'X', 'Y', 'Z'] ntools=4",
+            "got=['W', 'X', 'Y', 'Z'] ntools=4"
+          ],
+          "trials": [
+            {
+              "pass": true,
+              "reason": "got=['W', 'X', 'Y', 'Z'] ntools=4",
+              "elapsed_s": 7.09,
+              "tok_s": 34.9,
+              "tools": [
+                "write",
+                "write",
+                "write",
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "Done. All four files written:\n- `w.txt` = `W`\n- `x.txt` = `X`\n- `y.txt` = `Y`\n- `z.txt` = `Z`",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "batch",
+              "level": "hard",
+              "kind": "batch"
+            },
+            {
+              "pass": true,
+              "reason": "got=['W', 'X', 'Y', 'Z'] ntools=4",
+              "elapsed_s": 7.08,
+              "tok_s": 34.8,
+              "tools": [
+                "write",
+                "write",
+                "write",
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "Done. All four files written:\n\n- **w.txt** \u2192 `W`\n- **x.txt** \u2192 `X`\n- **y.txt** \u2192 `Y`\n- **z.txt** \u2192 `Z`",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "batch",
+              "level": "hard",
+              "kind": "batch"
+            },
+            {
+              "pass": true,
+              "reason": "got=['W', 'X', 'Y', 'Z'] ntools=4",
+              "elapsed_s": 7.09,
+              "tok_s": 34.9,
+              "tools": [
+                "write",
+                "write",
+                "write",
+                "write"
+              ],
+              "vetoes": 0,
+              "text": "Done. All four files written:\n- `w.txt` = `W`\n- `x.txt` = `X`\n- `y.txt` = `Y`\n- `z.txt` = `Z`",
+              "num_ctx": 8192,
+              "path": "product_guard",
+              "route": "batch",
+              "level": "hard",
+              "kind": "batch"
+            }
+          ]
+        }
+      },
+      "passed": 12,
+      "total": 12
+    }
+  }
+}

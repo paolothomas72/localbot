@@ -1,0 +1,190 @@
+{
+  "stamp": "20261026T163037Z",
+  "user": "Read the file notes.txt and tell me what it says.",
+  "tool": [
+    {
+      "type": "function",
+      "function": {
+        "name": "read",
+        "description": "Read a file. Numbered lines (N\\tcontent).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "path"
+          ]
+        }
+      }
+    }
+  ],
+  "results": [
+    {
+      "model": "hf.co/OBLITERATUS/Gemma-4-12B-OBLITERATED:Q4_K_M",
+      "loaded_before": [],
+      "request": {
+        "options": {
+          "temperature": 0,
+          "num_ctx": 8192,
+          "num_predict": 512
+        },
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a local coding agent. Use tools. Be honest. Strip line-number prefixes from read() before edit or write. Do the smallest change that matches intent. If asked for JSON only, reply with JSON only."
+          },
+          {
+            "role": "user",
+            "content": "Read the file notes.txt and tell me what it says."
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "read",
+              "description": "Read a file. Numbered lines (N\\tcontent).",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "wall_s": 14.73,
+      "prompt_eval_count": 122,
+      "eval_count": 42,
+      "done_reason": "stop",
+      "gpu": {
+        "size": 7996167946,
+        "size_vram": 7996167946
+      },
+      "message": {
+        "role": "assistant",
+        "content": "",
+        "thinking": "The user wants to know the content of the file `notes.txt`. I need to read the file first.",
+        "tool_calls": [
+          {
+            "id": "XTmyWJAUjg46pXt9tMmV66q59NjwjdVl",
+            "function": {
+              "index": 0,
+              "name": "read",
+              "arguments": {
+                "path": "notes.txt"
+              }
+            }
+          }
+        ]
+      },
+      "call_source": "native",
+      "native_tool_calls": [
+        {
+          "id": "XTmyWJAUjg46pXt9tMmV66q59NjwjdVl",
+          "function": {
+            "index": 0,
+            "name": "read",
+            "arguments": {
+              "path": "notes.txt"
+            }
+          }
+        }
+      ],
+      "text_parsed_calls": [],
+      "text_has_tool_call_attempt": false,
+      "loaded_after_unload": []
+    },
+    {
+      "model": "gemma4:12b",
+      "loaded_before": [],
+      "request": {
+        "options": {
+          "temperature": 0,
+          "num_ctx": 8192,
+          "num_predict": 512
+        },
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a local coding agent. Use tools. Be honest. Strip line-number prefixes from read() before edit or write. Do the smallest change that matches intent. If asked for JSON only, reply with JSON only."
+          },
+          {
+            "role": "user",
+            "content": "Read the file notes.txt and tell me what it says."
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "read",
+              "description": "Read a file. Numbered lines (N\\tcontent).",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "wall_s": 14.9,
+      "prompt_eval_count": 122,
+      "eval_count": 51,
+      "done_reason": "stop",
+      "gpu": {
+        "size": 1141322546,
+        "size_vram": 1141322546
+      },
+      "message": {
+        "role": "assistant",
+        "content": "",
+        "thinking": "The user wants me to read a file named `notes.txt` and tell them its content. I should use the `read` tool to do this.",
+        "tool_calls": [
+          {
+            "id": "call_gwg7cuc7",
+            "function": {
+              "index": 0,
+              "name": "read",
+              "arguments": {
+                "path": "notes.txt"
+              }
+            }
+          }
+        ]
+      },
+      "call_source": "native",
+      "native_tool_calls": [
+        {
+          "id": "call_gwg7cuc7",
+          "function": {
+            "index": 0,
+            "name": "read",
+            "arguments": {
+              "path": "notes.txt"
+            }
+          }
+        }
+      ],
+      "text_parsed_calls": [],
+      "text_has_tool_call_attempt": false,
+      "loaded_after_unload": []
+    }
+  ]
+}

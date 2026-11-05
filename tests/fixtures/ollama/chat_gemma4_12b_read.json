@@ -1,0 +1,70 @@
+{
+ "source": "results/stage1/probe_native_tools_20261026T163037Z.json (S1.4, real Ollama 0.40.11 reply; only fields the probe kept)",
+ "request": {
+  "options": {
+   "temperature": 0,
+   "num_ctx": 8192,
+   "num_predict": 512
+  },
+  "messages": [
+   {
+    "role": "system",
+    "content": "You are a local coding agent. Use tools. Be honest. Strip line-number prefixes from read() before edit or write. Do the smallest change that matches intent. If asked for JSON only, reply with JSON only."
+   },
+   {
+    "role": "user",
+    "content": "Read the file notes.txt and tell me what it says."
+   }
+  ],
+  "tools": [
+   {
+    "type": "function",
+    "function": {
+     "name": "read",
+     "description": "Read a file. Numbered lines (N\\tcontent).",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "path": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "path"
+      ]
+     }
+    }
+   }
+  ]
+ },
+ "response": {
+  "model": "gemma4:12b",
+  "message": {
+   "role": "assistant",
+   "content": "",
+   "thinking": "The user wants me to read a file named `notes.txt` and tell them its content. I should use the `read` tool to do this.",
+   "tool_calls": [
+    {
+     "id": "call_gwg7cuc7",
+     "function": {
+      "index": 0,
+      "name": "read",
+      "arguments": {
+       "path": "notes.txt"
+      }
+     }
+    }
+   ]
+  },
+  "done": true,
+  "done_reason": "stop",
+  "prompt_eval_count": 122,
+  "eval_count": 51
+ },
+ "ps_row": {
+  "name": "gemma4:12b",
+  "model": "gemma4:12b",
+  "size": 1141322546,
+  "size_vram": 1141322546
+ }
+}

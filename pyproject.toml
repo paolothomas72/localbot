@@ -1,0 +1,34 @@
+# Packaging (H1 Track P). The runtime needs only psutil; pytest and the rest are dev-only
+# (requirements-dev.txt). The tests run on Python 3.12 only (.python-version pins 3.12.13).
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "localbot"
+dynamic = ["version"]
+description = "A personal agent for local and open-weight models (pre-alpha)."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE", "localbot/NOTICE"]
+requires-python = ">=3.12"
+dependencies = ["psutil>=7.2.2,<8"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+]
+
+[project.scripts]
+localbot = "localbot.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["localbot*"]
+
+[tool.setuptools.package-data]
+localbot = ["NOTICE", "exam/packs/*.json"]  # the injection pack: `--pack injection` reads it (H1-K K3)
+
+[tool.setuptools.dynamic]
+version = {attr = "localbot.__version__"}

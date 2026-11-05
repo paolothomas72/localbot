@@ -1,0 +1,648 @@
+"""Tests for XML function call converter (fn_call.py)."""
+import pytest
+
+from localharness.core.types import ToolCall, ToolSchema
+from localharness.provider.fn_call import FnCallConverter
+
+
+@pytest.fixture
+def converter() -> FnCallConverter:
+    return FnCallConverter()
+
+
+# ---------------------------------------------------------------------------
+# extract_tool_calls
+# ---------------------------------------------------------------------------
+
+
+def test_extract_single_tool_call(converter: FnCallConverter):
+    text = """
+<tool_call>
+<name>list_files</name>
+<parameters>{"path": "/tmp"}</parameters>
+</tool_call>
+"""
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 1
+    assert calls[0].name == "list_files"
+    assert calls[0].arguments == {"path": "/tmp"}
+
+
+def test_extract_multiple_tool_calls(converter: FnCallConverter):
+    text = """
+<tool_call>
+<name>read_file</name>
+<parameters>{"path": "/etc/hosts"}</parameters>
+</tool_call>
+<tool_call>
+<name>glob</name>
+<parameters>{"pattern": "src/**/*.py"}</parameters>
+</tool_call>
+"""
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 2
+    assert calls[0].name == "read_file"
+    assert calls[1].name == "glob"
+
+
+def test_extract_no_tool_calls(converter: FnCallConverter):
+    text = "This is a plain text response with no tool calls."
+    calls = converter.extract_tool_calls(text)
+    assert calls == []
+
+
+def test_extract_partial_tool_call(converter: FnCallConverter):
+    """Truncated tool_call (missing closing tag) still extracted via partial regex."""
+    text = '<tool_call>\n<name>my_tool</name>\n<parameters>{"key": "value"}'
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 1
+    assert calls[0].name == "my_tool"
+
+
+def test_extract_legacy_non_dict_parameters_is_parse_failure(converter: FnCallConverter):
+    """A JSON ARRAY body is not arguments. ToolCall is an unvalidated dataclass, so letting it
+    through only blew up later at Action(tool_params=[...]) — a traceback and a dead turn instead
+    of the nudge. Dropping the call routes it to ParseFailed, the intended recovery."""
+    from localharness.provider.fn_call import has_tool_call_attempt
+    text = '<tool_call>\n<name>glob</name>\n<parameters>["*.py"]</parameters>\n</tool_call>'
+    assert converter.extract_tool_calls(text) == []
+    assert has_tool_call_attempt(text) is True
+
+
+def test_extract_legacy_partial_non_dict_parameters_is_parse_failure(converter: FnCallConverter):
+    """Same guard on the truncated-output path."""
+    text = '<tool_call>\n<name>glob</name>\n<parameters>["*.py"]'
+    assert converter.extract_tool_calls(text) == []
+
+
+# ---------------------------------------------------------------------------
+# _repair_json
+# ---------------------------------------------------------------------------
+
+
+def test_json_repair_trailing_comma(converter: FnCallConverter):
+    result = converter._repair_json('{"a": 1,}')
+    assert result == {"a": 1}
+
+
+def test_json_repair_single_quotes(converter: FnCallConverter):
+    result = converter._repair_json("{'a': 'b'}")
+    assert result == {"a": "b"}
+
+
+def test_json_repair_truncated(converter: FnCallConverter):
+    result = converter._repair_json('{"a": 1')
+    assert result == {"a": 1}
+
+
+def test_json_repair_valid(converter: FnCallConverter):
+    result = converter._repair_json('{"x": 42}')
+    assert result == {"x": 42}
+
+
+def test_json_repair_unfixable(converter: FnCallConverter):
+    """Totally malformed JSON returns None."""
+    result = converter._repair_json("this is not json at all }{")
+    assert result is None
+
+
+# ---------------------------------------------------------------------------
+# build_system_injection
+# ---------------------------------------------------------------------------
+
+
+def test_build_system_injection_empty(converter: FnCallConverter):
+    result = converter.build_system_injection([])
+    assert result == ""
+
+
+def test_build_system_injection(converter: FnCallConverter):
+    tools: list[ToolSchema] = [
+        {
+            "name": "list_files",
+            "description": "List directory contents",
+            "parameters": {
+                "type": "object",
+                "properties": {"path": {"type": "string", "description": "Directory path"}},
+                "required": ["path"],
+            },
+        },
+        {
+            "name": "read_file",
+            "description": "Read a file",
+            "parameters": {
+                "type": "object",
+                "properties": {"path": {"type": "string", "description": "File path"}},
+                "required": ["path"],
+            },
+        },
+    ]
+    result = converter.build_system_injection(tools)
+    assert "<tools>" in result
+    assert 'name="list_files"' in result
+    assert 'name="read_file"' in result
+    assert "<tool_call>" in result
+
+
+# ---------------------------------------------------------------------------
+# schema_to_xml_tool
+# ---------------------------------------------------------------------------
+
+
+def test_schema_to_xml_tool(converter: FnCallConverter):
+    schema: ToolSchema = {
+        "name": "my_tool",
+        "description": "Does something useful",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "description": "How many",
+                },
+            },
+            "required": ["count"],
+        },
+    }
+    xml = converter.schema_to_xml_tool(schema)
+    assert '<tool name="my_tool">' in xml
+    assert "<description>Does something useful</description>" in xml
+    assert 'name="count"' in xml
+    assert 'type="integer"' in xml
+
+
+# ---------------------------------------------------------------------------
+# tool_calls_to_messages
+# ---------------------------------------------------------------------------
+
+
+def test_tool_calls_to_messages(converter: FnCallConverter):
+    calls = [
+        ToolCall(name="search", arguments={"query": "hello"}, id="tc-1"),
+        ToolCall(name="list_files", arguments={"path": "/"}, id="tc-2"),
+    ]
+    messages = converter.tool_calls_to_messages(calls)
+    assert len(messages) == 2
+    assert messages[0]["role"] == "assistant"
+    assert messages[1]["role"] == "assistant"
+
+
+# ---------------------------------------------------------------------------
+# strip_thinking_tags / has_tool_call_attempt
+# ---------------------------------------------------------------------------
+
+
+def test_strip_thinking_tags():
+    from localharness.provider.fn_call import strip_thinking_tags
+    text = "<think>\nI should search for files.\n</think>\n\nHere is the result."
+    assert strip_thinking_tags(text) == "Here is the result."
+
+
+def test_strip_thinking_tags_empty():
+    from localharness.provider.fn_call import strip_thinking_tags
+    assert strip_thinking_tags("") == ""
+    assert strip_thinking_tags(None) is None
+
+
+def test_strip_thinking_tags_preserves_non_think():
+    from localharness.provider.fn_call import strip_thinking_tags
+    text = "No thinking here."
+    assert strip_thinking_tags(text) == "No thinking here."
+
+
+def test_has_tool_call_attempt():
+    from localharness.provider.fn_call import has_tool_call_attempt
+    assert has_tool_call_attempt("<tool_call>\n<name>glob</name>") is True
+    assert has_tool_call_attempt("<function=grep>\n<parameter=pattern>test</parameter>") is True
+    assert has_tool_call_attempt("Just plain text.") is False
+    assert has_tool_call_attempt("") is False
+
+
+def test_has_tool_call_attempt_fenced_tool_code():
+    """Gemma-style ```tool_code fence (Python-call syntax, never taught to the model) must still
+    register as an attempted call, not silently read as 'no tool call intended'."""
+    from localharness.provider.fn_call import has_tool_call_attempt
+    text = '```tool_code\nlist_files(path="/tmp")\n```'
+    assert has_tool_call_attempt(text) is True
+
+
+def test_has_tool_call_attempt_bare_json_name_arguments():
+    """Bare inline JSON shaped like a call (no fence, no <tool_call> wrapper) must register."""
+    from localharness.provider.fn_call import has_tool_call_attempt
+    text = 'Sure: {"name": "get_weather", "arguments": {"city": "SF"}}'
+    assert has_tool_call_attempt(text) is True
+
+
+def test_has_tool_call_attempt_fenced_json_call_shape():
+    """A ```json fence whose body looks like a call (name + parameters) counts too."""
+    from localharness.provider.fn_call import has_tool_call_attempt
+    text = '```json\n{"name": "grep", "parameters": {"pattern": "x"}}\n```'
+    assert has_tool_call_attempt(text) is True
+
+
+def test_has_tool_call_attempt_deepseek_dsml_arrives_as_content():
+    """VERBATIM capture from a real DeepSeek-V4-Flash turn on llama-server (2026-08-05).
+
+    The session had been downgraded to xml mode, so the model's NATIVE tool syntax was never
+    parsed and got rendered to the user as an assistant message: it asked for a file, the model
+    correctly called create_file twice, and nothing was created. Reading as 'no tool call
+    intended' is what made a working model look like it was lying about its work.
+    """
+    from localharness.provider.fn_call import has_tool_call_attempt
+    text = (
+        '<｜DSML｜tool invoke="create_file">\n'
+        '<｜DSML｜parameter name="file_path">/tmp/lh_probe.txt</｜DSML｜parameter>\n'
+        '<｜DSML｜parameter name="content">hello</｜DSML｜parameter>\n'
+        "</｜DSML｜tool>"
+    )
+    assert has_tool_call_attempt(text) is True
+
+
+def test_has_tool_call_attempt_deepseek_v3_tool_calls_envelope():
+    """DeepSeek V3's envelope is the same class of failure — unparsed native syntax as content."""
+    from localharness.provider.fn_call import has_tool_call_attempt
+    assert has_tool_call_attempt("<｜tool▁calls▁begin｜><｜tool▁call▁begin｜>function") is True
+
+
+def test_has_tool_call_attempt_prose_about_dsml_is_not_a_call():
+    """Discussing the syntax is not emitting it — the guard must not fire on ordinary prose."""
+    from localharness.provider.fn_call import has_tool_call_attempt
+    assert has_tool_call_attempt("DeepSeek emits DSML, which the harness does not parse.") is False
+
+
+def test_has_tool_call_attempt_plain_json_fence_not_flagged():
+    """A ```json fence with no call shape (e.g. a final JSON answer) must NOT be flagged — only
+    fences that look like a call attempt count, keeping this heuristic from over-firing."""
+    from localharness.provider.fn_call import has_tool_call_attempt
+    text = '```json\n{"summary": "done", "count": 3}\n```'
+    assert has_tool_call_attempt(text) is False
+
+
+def test_has_tool_call_attempt_json_fence_with_name_key_not_flagged():
+    """A ```json ANSWER that merely carries a "name" key (package.json, a record list) is not a
+    call attempt — "name" is one of the commonest keys in ordinary JSON. Flagging it cost the user
+    three bogus 'check --jinja' alarms and four extra generations before the real answer landed."""
+    from localharness.provider.fn_call import has_tool_call_attempt
+    assert has_tool_call_attempt('```json\n{"name": "my-app", "version": "1.0.0"}\n```') is False
+    assert has_tool_call_attempt('```json\n[{"name": "alice", "age": 30}]\n```') is False
+    assert has_tool_call_attempt('```json\n{"expr": "sum(a, b)"}\n```') is False
+
+
+# ---------------------------------------------------------------------------
+# Permissive XML parsing
+# ---------------------------------------------------------------------------
+
+
+def test_extract_name_equals_syntax(converter: FnCallConverter):
+    """Qwen sometimes emits <name=X</name> instead of <name>X</name>."""
+    text = """<tool_call>
+<name=grep</name>
+<parameters>{"pattern": "morning"}</parameters>
+</tool_call>"""
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 1
+    assert calls[0].name == "grep"
+    assert calls[0].arguments == {"pattern": "morning"}
+
+
+def test_extract_legacy_mcp_namespaced_name(converter: FnCallConverter):
+    """FIX 1: the name class must accept ':' — mcp:fetch is exactly the namespaced form the
+    system-prompt injection teaches (bench/schema.py parse_tool_name); a bare [\\w\\-]+ class
+    silently produced zero matches instead of parsing it."""
+    text = "<tool_call><name>mcp:fetch</name><parameters>{}</parameters></tool_call>"
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 1
+    assert calls[0].name == "mcp:fetch"
+    assert calls[0].arguments == {}
+
+
+def test_extract_qwen_native_plugin_namespaced_name(converter: FnCallConverter):
+    """FIX 1: the name class must also accept '.' — plugin:PLUGIN.TOOL is the other
+    namespaced form parse_tool_name teaches the model to emit."""
+    text = (
+        "<tool_call>\n<function=plugin:research_tools.exa_search>\n"
+        "<parameter=query>weather</parameter>\n</function>\n</tool_call>"
+    )
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 1
+    assert calls[0].name == "plugin:research_tools.exa_search"
+    assert calls[0].arguments == {"query": "weather"}
+
+
+def test_extract_singular_parameter_tag(converter: FnCallConverter):
+    """Some models emit <parameter> instead of <parameters>."""
+    text = """<tool_call>
+<name>glob</name>
+<parameter>{"pattern": "*.py"}</parameter>
+</tool_call>"""
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 1
+    assert calls[0].name == "glob"
+
+
+def test_extract_tool_calls_with_thinking_tags(converter: FnCallConverter):
+    """Tool calls wrapped in thinking tags should still be extracted."""
+    text = """<think>
+I need to search for files.
+</think>
+
+<tool_call>
+<name>glob</name>
+<parameters>{"pattern": "*.py"}</parameters>
+</tool_call>"""
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 1
+    assert calls[0].name == "glob"
+
+
+# ---------------------------------------------------------------------------
+# Qwen 3 native format: <function=NAME><parameter=P>value</parameter>
+# ---------------------------------------------------------------------------
+
+
+def test_extract_qwen_native_single(converter: FnCallConverter):
+    """Qwen 3 native tool call format."""
+    text = """<tool_call>
+<function=list_files>
+<parameter=path>
+/tmp
+</parameter>
+</function>
+</tool_call>"""
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 1
+    assert calls[0].name == "list_files"
+    assert calls[0].arguments == {"path": "/tmp"}
+
+
+def test_extract_qwen_native_multi_params(converter: FnCallConverter):
+    """Qwen 3 native format with multiple parameters."""
+    text = """<tool_call>
+<function=grep_search>
+<parameter=file_type>
+.py
+</parameter>
+<parameter=path>
+/home
+</parameter>
+<parameter=pattern>
+import
+</parameter>
+</function>
+</tool_call>"""
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 1
+    assert calls[0].name == "grep_search"
+    assert calls[0].arguments == {"file_type": ".py", "path": "/home", "pattern": "import"}
+
+
+def test_extract_qwen_native_multiple_calls(converter: FnCallConverter):
+    """Multiple Qwen 3 native tool calls in one response."""
+    text = """<tool_call>
+<function=glob>
+<parameter=pattern>*.py</parameter>
+</function>
+</tool_call>
+<tool_call>
+<function=bash_exec>
+<parameter=command>pwd</parameter>
+</function>
+</tool_call>"""
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 2
+    assert calls[0].name == "glob"
+    assert calls[0].arguments == {"pattern": "*.py"}
+    assert calls[1].name == "bash_exec"
+    assert calls[1].arguments == {"command": "pwd"}
+
+
+def test_extract_qwen_native_with_thinking(converter: FnCallConverter):
+    """Qwen 3 native format with thinking tags."""
+    text = """<think>
+I should list files first.
+</think>
+
+<tool_call>
+<function=list_files>
+<parameter=path>/tmp</parameter>
+</function>
+</tool_call>"""
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 1
+    assert calls[0].name == "list_files"
+
+
+def test_extract_qwen_native_numeric_value(converter: FnCallConverter):
+    """Qwen 3 native format with numeric parameter values."""
+    text = """<tool_call>
+<function=read_file>
+<parameter=path>/etc/hosts</parameter>
+<parameter=limit>50</parameter>
+</function>
+</tool_call>"""
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 1
+    assert calls[0].arguments["path"] == "/etc/hosts"
+    assert calls[0].arguments["limit"] == 50
+
+
+def test_extract_qwen_native_boolean_value(converter: FnCallConverter):
+    """Qwen 3 native format with boolean parameter values."""
+    text = """<tool_call>
+<function=bash_exec>
+<parameter=command>ls</parameter>
+<parameter=background>true</parameter>
+</function>
+</tool_call>"""
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 1
+    assert calls[0].arguments["background"] is True
+
+
+# ---------------------------------------------------------------------------
+# Hermes JSON-inside-XML format (Qwen 3 base/instruct)
+# ---------------------------------------------------------------------------
+
+
+def test_extract_hermes_json(converter: FnCallConverter):
+    """Hermes format: JSON inside <tool_call> tags."""
+    text = '<tool_call>\n{"name": "get_weather", "arguments": {"city": "SF"}}\n</tool_call>'
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 1
+    assert calls[0].name == "get_weather"
+    assert calls[0].arguments == {"city": "SF"}
+
+
+def test_extract_hermes_json_multiple(converter: FnCallConverter):
+    text = (
+        '<tool_call>\n{"name": "glob", "arguments": {"pattern": "*.py"}}\n</tool_call>\n'
+        '<tool_call>\n{"name": "read", "arguments": {"path": "/tmp/x.py"}}\n</tool_call>'
+    )
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 2
+    assert calls[0].name == "glob"
+    assert calls[1].name == "read"
+
+
+def test_extract_hermes_json_parameters_alias(converter: FnCallConverter):
+    """'parameters' is the key the system injection teaches, and every other pattern in the module
+    accepts it. A model blending it with its native Hermes JSON used to parse "successfully" with
+    arguments={} — the tool ran empty and answered 'Field required' for a field it DID supply."""
+    text = (
+        '<tool_call>{"name": "write_file", '
+        '"parameters": {"path": "/tmp/a", "content": "hello"}}</tool_call>'
+    )
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 1
+    assert calls[0].name == "write_file"
+    assert calls[0].arguments == {"path": "/tmp/a", "content": "hello"}
+
+
+def test_extract_hermes_json_non_dict_arguments_is_parse_failure(converter: FnCallConverter):
+    """Array arguments are dropped, not handed to Action(tool_params=[...]) to crash the turn."""
+    text = '<tool_call>{"name": "glob", "arguments": ["*.py"]}</tool_call>'
+    assert converter.extract_tool_calls(text) == []
+
+
+# ---------------------------------------------------------------------------
+# Stray / unbalanced closing-tag tolerance (issue #14 — Qwen3.6 / llama.cpp drift)
+#
+# Runtimes emit stray, duplicated, or orphan </tool_call> closers that break the
+# balanced-pair regexes. A fallback pre-pass drops spurious closers and retries,
+# but ONLY when the normal parse found nothing — so working parses are untouched.
+# ---------------------------------------------------------------------------
+
+
+def test_stray_duplicate_closer_after_qwen(converter: FnCallConverter):
+    """(1) Valid call followed by a stray duplicate </tool_call> still parses."""
+    text = (
+        "<tool_call>\n<function=list_files>\n<parameter=path>/tmp</parameter>\n"
+        "</function>\n</tool_call>\n</tool_call>"
+    )
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 1
+    assert calls[0].name == "list_files"
+    assert calls[0].arguments == {"path": "/tmp"}
+
+
+def test_orphan_closer_before_opening(converter: FnCallConverter):
+    """(2) Stray </tool_call> BEFORE the opener (leaked from a thinking block)."""
+    text = (
+        "</tool_call>\n<tool_call>\n<function=list_files>\n"
+        "<parameter=path>/tmp</parameter>\n</function>\n</tool_call>"
+    )
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 1
+    assert calls[0].name == "list_files"
+    assert calls[0].arguments == {"path": "/tmp"}
+
+
+def test_duplicated_closer_immediately_repeated(converter: FnCallConverter):
+    """(3) Duplicated closer immediately repeated (no whitespace between)."""
+    text = (
+        "<tool_call>\n<function=list_files>\n<parameter=path>/tmp</parameter>\n"
+        "</function>\n</tool_call></tool_call>"
+    )
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 1
+    assert calls[0].name == "list_files"
+
+
+def test_balanced_input_parses_identically(converter: FnCallConverter):
+    """(4) Control: balanced input is byte-identical through the pre-pass and parses the same."""
+    from localharness.provider.fn_call import _drop_spurious_toolcall_closers
+    text = (
+        "<tool_call>\n<function=list_files>\n<parameter=path>/tmp</parameter>\n"
+        "</function>\n</tool_call>"
+    )
+    # Pre-pass must be a no-op on well-formed input (conservatism guarantee).
+    assert _drop_spurious_toolcall_closers(text) == text
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 1
+    assert calls[0].name == "list_files"
+    assert calls[0].arguments == {"path": "/tmp"}
+
+
+def test_plain_text_with_lone_stray_closer(converter: FnCallConverter):
+    """(5) Plain text with a lone stray closer and NO tool call -> zero, no crash."""
+    text = "Here is my final answer.</tool_call> Nothing else to do."
+    calls = converter.extract_tool_calls(text)
+    assert calls == []
+
+
+def test_stray_closer_between_wrapper_and_function_qwen(converter: FnCallConverter):
+    """Observed drift: stray </tool_call> between the wrapper open and the function."""
+    text = (
+        "<tool_call>\n</tool_call>\n<function=list_files>\n"
+        "<parameter=path>/tmp</parameter>\n</function>\n</tool_call>"
+    )
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 1
+    assert calls[0].name == "list_files"
+    assert calls[0].arguments == {"path": "/tmp"}
+
+
+def test_stray_closer_between_wrapper_and_json_hermes(converter: FnCallConverter):
+    """Observed drift: stray </tool_call> between the wrapper open and the Hermes JSON."""
+    text = (
+        '<tool_call>\n</tool_call>\n'
+        '{"name": "get_weather", "arguments": {"city": "SF"}}\n</tool_call>'
+    )
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 1
+    assert calls[0].name == "get_weather"
+    assert calls[0].arguments == {"city": "SF"}
+
+
+def test_stray_closer_between_wrapper_and_name_legacy(converter: FnCallConverter):
+    """Observed drift: stray </tool_call> between the wrapper open and the legacy <name>."""
+    text = (
+        '<tool_call>\n</tool_call>\n<name>list_files</name>\n'
+        '<parameters>{"path": "/tmp"}</parameters>\n</tool_call>'
+    )
+    calls = converter.extract_tool_calls(text)
+    assert len(calls) == 1
+    assert calls[0].name == "list_files"
+    assert calls[0].arguments == {"path": "/tmp"}
+
+
+def test_prepass_noop_on_balanced_multi_call(converter: FnCallConverter):
+    """Pre-pass leaves balanced multi-call input byte-identical (never fires on success)."""
+    from localharness.provider.fn_call import _drop_spurious_toolcall_closers
+    text = (
+        "<tool_call>\n<function=glob>\n<parameter=pattern>*.py</parameter>\n</function>\n</tool_call>\n"
+        "<tool_call>\n<function=bash_exec>\n<parameter=command>pwd</parameter>\n</function>\n</tool_call>"
+    )
+    assert _drop_spurious_toolcall_closers(text) == text
+    assert len(converter.extract_tool_calls(text)) == 2
+
+
+def test_truncate_after_last_tool_call_drops_trailing_prose():
+    text = (
+        "Pulling the data…\n<tool_call>\n<name>read</name>\n"
+        '<parameters>{"path": "x"}</parameters>\n</tool_call>\n'
+        "The file contains apples and bananas."  # pre-result fabrication
+    )
+    from localharness.provider.fn_call import truncate_after_last_tool_call
+    out = truncate_after_last_tool_call(text)
+    assert out.endswith("</tool_call>")
+    assert "apples" not in out
+    assert "<name>read</name>" in out
+
+
+def test_truncate_after_last_tool_call_keeps_multi_call_blocks():
+    from localharness.provider.fn_call import truncate_after_last_tool_call
+    text = (
+        "<tool_call>\n<name>a</name>\n<parameters>{}</parameters>\n</tool_call>\n"
+        "between\n"
+        "<tool_call>\n<name>b</name>\n<parameters>{}</parameters>\n</tool_call>\ntail"
+    )
+    out = truncate_after_last_tool_call(text)
+    assert out.count("<tool_call>") == 2
+    assert "between" in out and not out.endswith("tail")
+
+
+def test_truncate_after_last_tool_call_no_block_is_noop():
+    from localharness.provider.fn_call import truncate_after_last_tool_call
+    assert truncate_after_last_tool_call("plain answer") == "plain answer"
+    assert truncate_after_last_tool_call("") == ""

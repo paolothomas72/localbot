@@ -1,0 +1,10 @@
+# Test-only image (S8d): the delete-policy test for `git clean -fdx` needs git in the container.
+# NOT the bot's image: ContainerConfig.image stays the pinned python:3.12-slim, which has no git.
+# Built offline (`build --network none`, no pull) from a base already on this PC: S7a's
+# nikolaik/python-nodejs (Debian 13, git 2.47.3, python3, bash), pinned by digest.
+# tests/test_delete_container.py builds it on demand as localhost/localbot-test-git:s8d.
+# safe.directory: /work is a bind mount that uid 1000 does not own, so git would stop at
+# "dubious ownership" and the test's plain `git clean -fdx` would delete nothing.
+FROM docker.io/nikolaik/python-nodejs@sha256:8f958bdc1b4a422bfafd97cab4f69836401f616ae985d4b57a53d254f5bcb038
+RUN git --version && python3 --version && git config --system --add safe.directory '*'
+LABEL localbot.test-image="git" localbot.step="S8d"

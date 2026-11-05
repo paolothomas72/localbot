@@ -1,0 +1,671 @@
+{
+  "about": [
+    "Run manifest for docs/s10_recompute.py (S8i / H1 Track T, audit E-2).",
+    "Every core4 and parity_lab6 file in results/stage1 is listed once: in one run, or in void.",
+    "A run holds at most one file per (pack, model); s10 stops with an error otherwise.",
+    "gate = the stage1_gpu_batch.ps1 gate name (G4 runs fill s10 section 3); batch = the label s10 section 14.4 groups by;",
+    "code = the commit the files record in run_env; source = where the run is logged.",
+    "Void files are never counted in any gate, finding, roster or G5 total (s10 section 0.1).",
+    "A run lists its files, or takes them from its batch's own record (H1-J): \"files_from_batch\": TAG = the",
+    "results/stage1 files named by the ok rows of state/runs/TAG_summary.tsv whose gate is the run's gate.",
+    "Both keys = the union; per (gate, model, pack, profile) only the latest ok row counts. No summary and no list yet",
+    "= the run is pending (0 files). W2S and INJ files are never counted in an exam gate (s10 sections 15, 16).",
+    "state/ is not committed: after the W2S evenings, freeze the list (paste s10 section 15's freeze block as the",
+    "entry's \"files\") in the same commit as the result files, so a checkout without the summary still finds them.",
+    "H1-M (2026-11-02): the W2S and INJ entries are frozen (explicit \"files\", no files_from_batch); each entry",
+    "stands alone in a checkout without state/.",
+    "No W2S or INJ entry is pending after this freeze: the next W2S/INJ batch (Stage 2) needs a new run entry.",
+    "Any new result file in results/stage1/ that is not listed in this manifest (a run or void) fails G1 host —",
+    "the reason G1 failed 32 tests on 2026-11-02.",
+    "X6 (2026-11-04): the X5 entries (every gate re-run on the frozen commit 61fb534, gate_run tag x5_61fb534) are frozen from gate_run's own summary, one entry per gate. LONG files run under core4_product (product rules), so they are never an exam number."
+  ],
+  "runs": [
+    {
+      "run": "G3 2026-10-26",
+      "gate": "G3",
+      "batch": "2026-10-26",
+      "code": "none recorded (before run_env)",
+      "source": "BUILD_LOG S6 (qwen-ft, Ornith) + S6.7 (nemotron)",
+      "files": [
+        "work_parity_lab6_qwen3-8b-ft-agentic-v1_latest_20261026T190256Z.json",
+        "trust_parity_lab6_qwen3-8b-ft-agentic-v1_latest_20261026T190352Z.json",
+        "privacy_parity_lab6_qwen3-8b-ft-agentic-v1_latest_20261026T190450Z.json",
+        "work_parity_lab6_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261026T190600Z.json",
+        "trust_parity_lab6_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261026T190740Z.json",
+        "privacy_parity_lab6_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261026T190932Z.json",
+        "work_parity_lab6_nemotron-3-nano_4b_20261026T192302Z.json",
+        "trust_parity_lab6_nemotron-3-nano_4b_20261026T192420Z.json",
+        "privacy_parity_lab6_nemotron-3-nano_4b_20261026T192540Z.json"
+      ]
+    },
+    {
+      "run": "run 1",
+      "gate": "G4",
+      "batch": "2026-10-28",
+      "code": "none recorded (before run_env)",
+      "source": "state/runs/g4_core4.log; BUILD_LOG G4 run 1",
+      "files": [
+        "work_core4_qwen3-8b-ft-agentic-v1_latest_20261028T170245Z.json",
+        "trust_core4_qwen3-8b-ft-agentic-v1_latest_20261028T171129Z.json",
+        "privacy_core4_qwen3-8b-ft-agentic-v1_latest_20261028T171822Z.json",
+        "work_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261028T172346Z.json",
+        "trust_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261028T173253Z.json",
+        "privacy_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261028T174109Z.json"
+      ]
+    },
+    {
+      "run": "run 2",
+      "gate": "G4",
+      "batch": "2026-10-29",
+      "code": "none recorded (before run_env)",
+      "source": "state/runs/g4r2_core4.log; BUILD_LOG S8d.3",
+      "files": [
+        "work_core4_qwen3-8b-ft-agentic-v1_latest_20261029T020140Z.json",
+        "trust_core4_qwen3-8b-ft-agentic-v1_latest_20261029T021021Z.json",
+        "privacy_core4_qwen3-8b-ft-agentic-v1_latest_20261029T021712Z.json",
+        "work_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261029T022227Z.json",
+        "trust_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261029T023129Z.json",
+        "privacy_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261029T023950Z.json"
+      ]
+    },
+    {
+      "run": "run 3",
+      "gate": "G4",
+      "batch": "2026-10-30",
+      "code": "none recorded (before run_env)",
+      "source": "state/runs/g4r3_core4.log",
+      "files": [
+        "work_core4_qwen3-8b-ft-agentic-v1_latest_20261030T112014Z.json",
+        "trust_core4_qwen3-8b-ft-agentic-v1_latest_20261030T112802Z.json",
+        "privacy_core4_qwen3-8b-ft-agentic-v1_latest_20261030T113539Z.json",
+        "work_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261030T114111Z.json",
+        "trust_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261030T114936Z.json",
+        "privacy_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261030T115722Z.json"
+      ]
+    },
+    {
+      "run": "G5 2026-10-30",
+      "gate": "G5",
+      "batch": "2026-10-30",
+      "code": "e4a8361",
+      "source": "state/runs/s1gpu_20261030T143229",
+      "files": [
+        "privacy_core4_hf.co_OBLITERATUS_Gemma-4-12B-OBLITERATED_Q4_K_M_20261030T183231Z.json",
+        "trust_core4_hf.co_OBLITERATUS_Gemma-4-12B-OBLITERATED_Q4_K_M_20261030T184046Z.json"
+      ]
+    },
+    {
+      "run": "G6 2026-10-30",
+      "gate": "G6",
+      "batch": "2026-10-30",
+      "code": "e4a8361",
+      "source": "state/runs/s1gpu_20261030T145556 (G6)",
+      "files": [
+        "privacy_core4_llama32-1b-localharness-poc_latest_20261030T185558Z.json",
+        "privacy_core4_llama3.2_1b_20261030T190037Z.json",
+        "privacy_core4_granite4_tiny-h_20261030T190555Z.json",
+        "privacy_core4_hermes3_8b_20261030T191121Z.json",
+        "privacy_core4_hermes3-8b-mvp64k_latest_20261030T191642Z.json",
+        "privacy_core4_llama3.1_8b_20261030T192139Z.json",
+        "privacy_core4_qwen3-8b-finetuned-test_latest_20261030T192653Z.json",
+        "privacy_core4_qwen3-8b-gold-v2_latest_20261030T193347Z.json",
+        "privacy_core4_lfm2.5_8b_20261030T194053Z.json",
+        "privacy_core4_qwen3_8b_20261030T194619Z.json",
+        "privacy_core4_qwen3-vl_8b_20261030T195342Z.json",
+        "privacy_core4_gemma4_12b_20261030T200036Z.json",
+        "privacy_core4_JetBrains_mellum2-thinking-q4_k_m_latest_20261030T200813Z.json",
+        "privacy_core4_llama3.1_8b-instruct-q8_0_20261030T201431Z.json",
+        "privacy_core4_cogito_14b_20261030T202009Z.json",
+        "privacy_core4_qwen2.5-mvp64k_latest_20261030T202636Z.json",
+        "privacy_core4_hf.co_bartowski_NousResearch_Hermes-4-14B-GGUF_Q4_K_M_20261030T203404Z.json",
+        "privacy_core4_gemma4_e4b_20261030T204304Z.json",
+        "privacy_core4_ServiceNow-AI_Apriel-1.6-15b-Thinker_Q4_K_M_20261030T204937Z.json",
+        "privacy_core4_gpt-oss_20b_20261030T205828Z.json"
+      ]
+    },
+    {
+      "run": "G3N 2026-10-30",
+      "gate": "G3N",
+      "batch": "2026-10-30",
+      "code": "e4a8361",
+      "source": "state/runs/s1gpu_20261030T145556 (G3N)",
+      "files": [
+        "work_parity_lab6_nemotron-3-nano_4b_20261030T210605Z.json",
+        "trust_parity_lab6_nemotron-3-nano_4b_20261030T210719Z.json",
+        "privacy_parity_lab6_nemotron-3-nano_4b_20261030T210832Z.json"
+      ]
+    },
+    {
+      "run": "G4N 2026-10-30",
+      "gate": "G4N",
+      "batch": "2026-10-30",
+      "code": "e4a8361",
+      "source": "state/runs/s1gpu_20261030T145556 (G4N)",
+      "files": [
+        "work_core4_nemotron-3-nano_4b_20261030T210940Z.json",
+        "trust_core4_nemotron-3-nano_4b_20261030T211729Z.json",
+        "privacy_core4_nemotron-3-nano_4b_20261030T212430Z.json"
+      ]
+    },
+    {
+      "run": "G3N 2026-10-30 re-run",
+      "gate": "G3N",
+      "batch": "2026-10-30",
+      "code": "db41245",
+      "source": "state/runs/s1gpu_20261030T174802 (commit c1abbf5)",
+      "files": [
+        "work_parity_lab6_nemotron-3-nano_4b_20261030T214804Z.json",
+        "trust_parity_lab6_nemotron-3-nano_4b_20261030T214916Z.json",
+        "privacy_parity_lab6_nemotron-3-nano_4b_20261030T215035Z.json"
+      ]
+    },
+    {
+      "run": "G3N S8f.1",
+      "gate": "G3N",
+      "batch": "S8f.1",
+      "code": "4884b27",
+      "source": "state/runs/s1gpu_20261030T205542 (G3N)",
+      "files": [
+        "work_parity_lab6_nemotron-3-nano_4b_20261031T005543Z.json",
+        "trust_parity_lab6_nemotron-3-nano_4b_20261031T005701Z.json",
+        "privacy_parity_lab6_nemotron-3-nano_4b_20261031T005803Z.json"
+      ]
+    },
+    {
+      "run": "G3 S8f.1",
+      "gate": "G3",
+      "batch": "S8f.1",
+      "code": "4884b27",
+      "source": "state/runs/s1gpu_20261030T205542 (G3)",
+      "files": [
+        "work_parity_lab6_qwen3-8b-ft-agentic-v1_latest_20261031T005907Z.json",
+        "trust_parity_lab6_qwen3-8b-ft-agentic-v1_latest_20261031T005956Z.json",
+        "privacy_parity_lab6_qwen3-8b-ft-agentic-v1_latest_20261031T010053Z.json",
+        "work_parity_lab6_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261031T010202Z.json",
+        "trust_parity_lab6_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261031T010340Z.json",
+        "privacy_parity_lab6_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261031T010548Z.json"
+      ]
+    },
+    {
+      "run": "G3 S8f.1 Ornith trust re-run",
+      "gate": "G3",
+      "batch": "S8f.1",
+      "code": "a72c51e",
+      "source": "BUILD_LOG S8f.2 (Ornith trust parity re-run, committed in 9914dc4)",
+      "files": [
+        "trust_parity_lab6_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261031T025606Z.json"
+      ]
+    },
+    {
+      "run": "run 4",
+      "gate": "G4",
+      "batch": "S8f.1",
+      "code": "4884b27",
+      "source": "state/runs/s1gpu_20261030T205542 (G4)",
+      "files": [
+        "work_core4_qwen3-8b-ft-agentic-v1_latest_20261031T010733Z.json",
+        "trust_core4_qwen3-8b-ft-agentic-v1_latest_20261031T011527Z.json",
+        "privacy_core4_qwen3-8b-ft-agentic-v1_latest_20261031T012247Z.json",
+        "work_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261031T012839Z.json",
+        "trust_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261031T013717Z.json",
+        "privacy_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261031T014521Z.json"
+      ]
+    },
+    {
+      "run": "G5 S8f.1",
+      "gate": "G5",
+      "batch": "S8f.1",
+      "code": "4884b27",
+      "source": "state/runs/s1gpu_20261030T205542 (G5)",
+      "files": [
+        "privacy_core4_hf.co_OBLITERATUS_Gemma-4-12B-OBLITERATED_Q4_K_M_20261031T015214Z.json",
+        "trust_core4_hf.co_OBLITERATUS_Gemma-4-12B-OBLITERATED_Q4_K_M_20261031T020116Z.json"
+      ]
+    },
+    {
+      "run": "G6 S8f.1",
+      "gate": "G6",
+      "batch": "S8f.1",
+      "code": "4884b27",
+      "source": "state/runs/s1gpu_20261030T221640",
+      "files": [
+        "privacy_core4_llama3.2_1b_20261031T021642Z.json",
+        "privacy_core4_llama3.1_8b-instruct-q8_0_20261031T022157Z.json"
+      ]
+    },
+    {
+      "run": "run 5 extra",
+      "gate": "G4",
+      "batch": "S8h",
+      "code": "cea3441",
+      "source": "state/runs/s1gpu_20261031T114710 (G4: the two clean Ornith files of the overlap batch, a second S8h sample, BRIEF_S8i §2.1)",
+      "files": [
+        "trust_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261031T161843Z.json",
+        "privacy_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261031T162735Z.json"
+      ]
+    },
+    {
+      "run": "G5 S8h",
+      "gate": "G5",
+      "batch": "S8h",
+      "code": "cea3441",
+      "source": "state/runs/s1gpu_20261031T114710 (G5)",
+      "files": [
+        "privacy_core4_hf.co_OBLITERATUS_Gemma-4-12B-OBLITERATED_Q4_K_M_20261031T163424Z.json",
+        "trust_core4_hf.co_OBLITERATUS_Gemma-4-12B-OBLITERATED_Q4_K_M_20261031T165403Z.json"
+      ]
+    },
+    {
+      "run": "G6 S8h",
+      "gate": "G6",
+      "batch": "S8h",
+      "code": "cea3441",
+      "source": "state/runs/s1gpu_20261031T130438",
+      "files": [
+        "privacy_core4_gpt-oss_20b_20261031T170443Z.json",
+        "privacy_core4_granite4_tiny-h_20261031T172057Z.json",
+        "privacy_core4_llama3.1_8b_20261031T172636Z.json"
+      ]
+    },
+    {
+      "run": "run 5",
+      "gate": "G4",
+      "batch": "S8h",
+      "code": "d8e94a8 (run_env; = cea3441 code)",
+      "source": "state/runs/s1gpu_20261031T151346 (the S8h re-run, alone)",
+      "files": [
+        "work_core4_qwen3-8b-ft-agentic-v1_latest_20261031T191349Z.json",
+        "trust_core4_qwen3-8b-ft-agentic-v1_latest_20261031T192136Z.json",
+        "privacy_core4_qwen3-8b-ft-agentic-v1_latest_20261031T192850Z.json",
+        "work_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261031T193420Z.json",
+        "trust_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261031T194252Z.json",
+        "privacy_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261031T195035Z.json"
+      ]
+    },
+    {
+      "run": "W2S 6a58d2d",
+      "gate": "W2S",
+      "batch": "W2S 6a58d2d",
+      "code": "6a58d2d",
+      "source": "state/runs/s1gpu_w2s_summary.tsv (BRIEF_H1J J1, weak to strong); frozen 2026-11-02 in H1-M",
+      "files": [
+        "privacy_core4_llama3.2_1b_20261102T034106Z.json",
+        "trust_core4_llama3.2_1b_20261102T034630Z.json",
+        "privacy_core4_product_llama3.2_1b_20261102T035329Z.json",
+        "trust_core4_product_llama3.2_1b_20261102T035848Z.json",
+        "privacy_core4_nemotron-3-nano_4b_20261102T040540Z.json",
+        "trust_core4_nemotron-3-nano_4b_20261102T041210Z.json",
+        "privacy_core4_product_nemotron-3-nano_4b_20261102T041923Z.json",
+        "trust_core4_product_nemotron-3-nano_4b_20261102T042552Z.json",
+        "privacy_core4_qwen3-8b-ft-agentic-v1_latest_20261102T043254Z.json",
+        "trust_core4_qwen3-8b-ft-agentic-v1_latest_20261102T043850Z.json",
+        "privacy_core4_product_qwen3-8b-ft-agentic-v1_latest_20261102T044711Z.json",
+        "trust_core4_product_qwen3-8b-ft-agentic-v1_latest_20261102T045330Z.json",
+        "privacy_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261102T050127Z.json",
+        "trust_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261102T050928Z.json",
+        "privacy_core4_product_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261102T051733Z.json",
+        "trust_core4_product_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261102T052501Z.json",
+        "privacy_core4_hf.co_OBLITERATUS_Gemma-4-12B-OBLITERATED_Q4_K_M_20261102T053317Z.json",
+        "trust_core4_hf.co_OBLITERATUS_Gemma-4-12B-OBLITERATED_Q4_K_M_20261102T055217Z.json",
+        "privacy_core4_product_hf.co_OBLITERATUS_Gemma-4-12B-OBLITERATED_Q4_K_M_20261102T063835Z.json",
+        "trust_core4_product_hf.co_OBLITERATUS_Gemma-4-12B-OBLITERATED_Q4_K_M_20261102T065521Z.json",
+        "privacy_core4_gpt-oss_20b_20261102T071019Z.json",
+        "trust_core4_gpt-oss_20b_20261102T072532Z.json",
+        "privacy_core4_product_gpt-oss_20b_20261102T074430Z.json",
+        "trust_core4_product_gpt-oss_20b_20261102T083136Z.json"
+      ],
+      "plan": {
+        "models": [
+          "llama3.2:1b",
+          "nemotron-3-nano:4b",
+          "qwen3-8b-ft-agentic-v1:latest",
+          "hf.co/deepreinforce-ai/Ornith-1.0-9B-GGUF:latest",
+          "hf.co/OBLITERATUS/Gemma-4-12B-OBLITERATED:Q4_K_M",
+          "gpt-oss:20b"
+        ],
+        "packs": [
+          "privacy",
+          "trust"
+        ],
+        "profiles": [
+          "core4",
+          "core4_product"
+        ],
+        "timing_only": [
+          "gpt-oss:20b"
+        ]
+      }
+    },
+    {
+      "run": "W2S 5ca8551",
+      "gate": "W2S",
+      "batch": "W2S 5ca8551",
+      "code": "5ca8551",
+      "source": "state/runs/s1gpu_w2s_5ca8551_summary.tsv (BRIEF_H1J J1, weak to strong); frozen 2026-11-02 in H1-M",
+      "files": [
+        "privacy_core4_llama3.2_1b_20261102T231512Z.json",
+        "trust_core4_llama3.2_1b_20261102T232035Z.json",
+        "privacy_core4_product_llama3.2_1b_20261102T232705Z.json",
+        "trust_core4_product_llama3.2_1b_20261102T233224Z.json",
+        "privacy_core4_nemotron-3-nano_4b_20261102T233900Z.json",
+        "trust_core4_nemotron-3-nano_4b_20261102T234544Z.json",
+        "privacy_core4_product_nemotron-3-nano_4b_20261102T235305Z.json",
+        "trust_core4_product_nemotron-3-nano_4b_20261102T235959Z.json",
+        "privacy_core4_qwen3-8b-ft-agentic-v1_latest_20261103T000701Z.json",
+        "trust_core4_qwen3-8b-ft-agentic-v1_latest_20261103T001330Z.json",
+        "privacy_core4_product_qwen3-8b-ft-agentic-v1_latest_20261103T002112Z.json",
+        "trust_core4_product_qwen3-8b-ft-agentic-v1_latest_20261103T002704Z.json",
+        "privacy_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261103T003502Z.json",
+        "trust_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261103T004243Z.json",
+        "privacy_core4_product_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261103T005049Z.json",
+        "trust_core4_product_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261103T005812Z.json",
+        "privacy_core4_hf.co_OBLITERATUS_Gemma-4-12B-OBLITERATED_Q4_K_M_20261103T010620Z.json",
+        "trust_core4_hf.co_OBLITERATUS_Gemma-4-12B-OBLITERATED_Q4_K_M_20261103T012331Z.json",
+        "privacy_core4_product_hf.co_OBLITERATUS_Gemma-4-12B-OBLITERATED_Q4_K_M_20261103T013825Z.json",
+        "trust_core4_product_hf.co_OBLITERATUS_Gemma-4-12B-OBLITERATED_Q4_K_M_20261103T015611Z.json",
+        "privacy_core4_gpt-oss_20b_20261103T021056Z.json",
+        "trust_core4_gpt-oss_20b_20261103T021914Z.json",
+        "privacy_core4_product_gpt-oss_20b_20261103T022820Z.json",
+        "trust_core4_product_gpt-oss_20b_20261103T023620Z.json"
+      ],
+      "plan": {
+        "models": [
+          "llama3.2:1b",
+          "nemotron-3-nano:4b",
+          "qwen3-8b-ft-agentic-v1:latest",
+          "hf.co/deepreinforce-ai/Ornith-1.0-9B-GGUF:latest",
+          "hf.co/OBLITERATUS/Gemma-4-12B-OBLITERATED:Q4_K_M",
+          "gpt-oss:20b"
+        ],
+        "packs": [
+          "privacy",
+          "trust"
+        ],
+        "profiles": [
+          "core4",
+          "core4_product"
+        ],
+        "timing_only": [
+          "gpt-oss:20b"
+        ]
+      }
+    },
+    {
+      "run": "INJ 6a58d2d",
+      "gate": "INJ",
+      "batch": "INJ 6a58d2d",
+      "code": "6a58d2d",
+      "source": "state/runs/s1gpu_inj_summary.tsv (BRIEF_H1K K2, the live injection pack); frozen 2026-11-02 in H1-M",
+      "files": [
+        "injection_core4_llama3.2_1b_20261102T133220Z.json",
+        "injection_core4_qwen3-8b-ft-agentic-v1_latest_20261102T134003Z.json",
+        "injection_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261102T134646Z.json"
+      ],
+      "plan": {
+        "models": [
+          "llama3.2:1b",
+          "qwen3-8b-ft-agentic-v1:latest",
+          "hf.co/deepreinforce-ai/Ornith-1.0-9B-GGUF:latest"
+        ],
+        "packs": [
+          "injection"
+        ],
+        "profiles": [
+          "core4"
+        ]
+      }
+    },
+    {
+      "run": "INJ 5ca8551",
+      "gate": "INJ",
+      "batch": "INJ 5ca8551",
+      "code": "5ca8551",
+      "source": "state/runs/s1gpu_inj_5ca8551_summary.tsv (BRIEF_H1K K2, the live injection pack); frozen 2026-11-02 in H1-M",
+      "files": [
+        "injection_core4_llama3.2_1b_20261102T224913Z.json",
+        "injection_core4_qwen3-8b-ft-agentic-v1_latest_20261102T225603Z.json",
+        "injection_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261102T230225Z.json"
+      ],
+      "plan": {
+        "models": [
+          "llama3.2:1b",
+          "qwen3-8b-ft-agentic-v1:latest",
+          "hf.co/deepreinforce-ai/Ornith-1.0-9B-GGUF:latest"
+        ],
+        "packs": [
+          "injection"
+        ],
+        "profiles": [
+          "core4"
+        ]
+      }
+    },
+    {
+      "run": "run 6",
+      "gate": "G4",
+      "batch": "5ca8551",
+      "code": "5ca8551",
+      "source": "state/runs/s1gpu_g4_5ca8551_summary.tsv (ok rows); frozen 2026-11-02 in H1-M",
+      "files": [
+        "work_core4_qwen3-8b-ft-agentic-v1_latest_20261103T024933Z.json",
+        "trust_core4_qwen3-8b-ft-agentic-v1_latest_20261103T025753Z.json",
+        "privacy_core4_qwen3-8b-ft-agentic-v1_latest_20261103T030547Z.json",
+        "work_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261103T031145Z.json",
+        "trust_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261103T032104Z.json",
+        "privacy_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261103T032929Z.json"
+      ]
+    },
+    {
+      "run": "G5 61fb534",
+      "gate": "G5",
+      "batch": "61fb534",
+      "code": "61fb534",
+      "source": "state/runs/x5_61fb534/summary_20261104T182725Z.json (gate_run --tag x5_61fb534, ok rows); frozen 2026-11-04 in X6",
+      "files": [
+        "privacy_core4_hf.co_OBLITERATUS_Gemma-4-12B-OBLITERATED_Q4_K_M_20261104T010248Z.json",
+        "trust_core4_hf.co_OBLITERATUS_Gemma-4-12B-OBLITERATED_Q4_K_M_20261104T012114Z.json"
+      ]
+    },
+    {
+      "run": "G6 61fb534",
+      "gate": "G6",
+      "batch": "61fb534",
+      "code": "61fb534",
+      "source": "state/runs/x5_61fb534/summary_20261104T182725Z.json (gate_run --tag x5_61fb534, ok rows); frozen 2026-11-04 in X6",
+      "files": [
+        "privacy_core4_llama32-1b-localharness-poc_latest_20261104T020905Z.json",
+        "privacy_core4_llama3.2_1b_20261104T021349Z.json",
+        "privacy_core4_granite4_tiny-h_20261104T021918Z.json",
+        "privacy_core4_hermes3_8b_20261104T022457Z.json",
+        "privacy_core4_hermes3-8b-mvp64k_latest_20261104T023005Z.json",
+        "privacy_core4_llama3.1_8b_20261104T023518Z.json",
+        "privacy_core4_qwen3-8b-finetuned-test_latest_20261104T024052Z.json",
+        "privacy_core4_qwen3-8b-gold-v2_latest_20261104T025306Z.json",
+        "privacy_core4_lfm2.5_8b_20261104T030706Z.json",
+        "privacy_core4_qwen3_8b_20261104T031429Z.json",
+        "privacy_core4_qwen3-vl_8b_20261104T033047Z.json",
+        "privacy_core4_gemma4_12b_20261104T035114Z.json",
+        "privacy_core4_JetBrains_mellum2-thinking-q4_k_m_latest_20261104T035901Z.json",
+        "privacy_core4_llama3.1_8b-instruct-q8_0_20261104T041034Z.json",
+        "privacy_core4_cogito_14b_20261104T041627Z.json",
+        "privacy_core4_qwen2.5-mvp64k_latest_20261104T042313Z.json",
+        "privacy_core4_hf.co_bartowski_NousResearch_Hermes-4-14B-GGUF_Q4_K_M_20261104T043121Z.json",
+        "privacy_core4_gemma4_e4b_20261104T045232Z.json",
+        "privacy_core4_ServiceNow-AI_Apriel-1.6-15b-Thinker_Q4_K_M_20261104T045915Z.json",
+        "privacy_core4_gpt-oss_20b_20261104T052142Z.json"
+      ]
+    },
+    {
+      "run": "G3N 61fb534",
+      "gate": "G3N",
+      "batch": "61fb534",
+      "code": "61fb534",
+      "source": "state/runs/x5_61fb534/summary_20261104T182725Z.json (gate_run --tag x5_61fb534, ok rows); frozen 2026-11-04 in X6",
+      "files": [
+        "work_parity_lab6_nemotron-3-nano_4b_20261104T120252Z.json",
+        "trust_parity_lab6_nemotron-3-nano_4b_20261104T120411Z.json",
+        "privacy_parity_lab6_nemotron-3-nano_4b_20261104T120525Z.json"
+      ]
+    },
+    {
+      "run": "G4N 61fb534",
+      "gate": "G4N",
+      "batch": "61fb534",
+      "code": "61fb534",
+      "source": "state/runs/x5_61fb534/summary_20261104T182725Z.json (gate_run --tag x5_61fb534, ok rows); frozen 2026-11-04 in X6",
+      "files": [
+        "work_core4_nemotron-3-nano_4b_20261104T120637Z.json",
+        "trust_core4_nemotron-3-nano_4b_20261104T121446Z.json",
+        "privacy_core4_nemotron-3-nano_4b_20261104T122148Z.json"
+      ]
+    },
+    {
+      "run": "G3 61fb534",
+      "gate": "G3",
+      "batch": "61fb534",
+      "code": "61fb534",
+      "source": "state/runs/x5_61fb534/summary_20261104T182725Z.json (gate_run --tag x5_61fb534, ok rows); frozen 2026-11-04 in X6",
+      "files": [
+        "work_parity_lab6_qwen3-8b-ft-agentic-v1_latest_20261104T122820Z.json",
+        "trust_parity_lab6_qwen3-8b-ft-agentic-v1_latest_20261104T122922Z.json",
+        "privacy_parity_lab6_qwen3-8b-ft-agentic-v1_latest_20261104T123029Z.json",
+        "work_parity_lab6_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261104T123119Z.json",
+        "trust_parity_lab6_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261104T123248Z.json",
+        "privacy_parity_lab6_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261104T123451Z.json"
+      ]
+    },
+    {
+      "run": "run 7",
+      "gate": "G4",
+      "batch": "61fb534",
+      "code": "61fb534",
+      "source": "state/runs/x5_61fb534/summary_20261104T182725Z.json (gate_run --tag x5_61fb534, ok rows); frozen 2026-11-04 in X6",
+      "files": [
+        "work_core4_qwen3-8b-ft-agentic-v1_latest_20261104T123636Z.json",
+        "trust_core4_qwen3-8b-ft-agentic-v1_latest_20261104T124446Z.json",
+        "privacy_core4_qwen3-8b-ft-agentic-v1_latest_20261104T125254Z.json",
+        "work_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261104T125840Z.json",
+        "trust_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261104T130741Z.json",
+        "privacy_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261104T131550Z.json"
+      ]
+    },
+    {
+      "run": "W2S 61fb534",
+      "gate": "W2S",
+      "batch": "W2S 61fb534",
+      "code": "61fb534",
+      "source": "state/runs/x5_61fb534/summary_20261104T182725Z.json (gate_run --tag x5_61fb534, ok rows); frozen 2026-11-04 in X6",
+      "files": [
+        "privacy_core4_llama3.2_1b_20261104T132328Z.json",
+        "trust_core4_llama3.2_1b_20261104T132845Z.json",
+        "privacy_core4_product_llama3.2_1b_20261104T133532Z.json",
+        "trust_core4_product_llama3.2_1b_20261104T134102Z.json",
+        "privacy_core4_nemotron-3-nano_4b_20261104T134737Z.json",
+        "trust_core4_nemotron-3-nano_4b_20261104T135405Z.json",
+        "privacy_core4_product_nemotron-3-nano_4b_20261104T140114Z.json",
+        "trust_core4_product_nemotron-3-nano_4b_20261104T140712Z.json",
+        "privacy_core4_qwen3-8b-ft-agentic-v1_latest_20261104T141404Z.json",
+        "trust_core4_qwen3-8b-ft-agentic-v1_latest_20261104T141954Z.json",
+        "privacy_core4_product_qwen3-8b-ft-agentic-v1_latest_20261104T142738Z.json",
+        "trust_core4_product_qwen3-8b-ft-agentic-v1_latest_20261104T143351Z.json",
+        "privacy_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261104T144125Z.json",
+        "trust_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261104T144843Z.json",
+        "privacy_core4_product_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261104T145653Z.json",
+        "trust_core4_product_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261104T150415Z.json",
+        "privacy_core4_hf.co_OBLITERATUS_Gemma-4-12B-OBLITERATED_Q4_K_M_20261104T151208Z.json",
+        "trust_core4_hf.co_OBLITERATUS_Gemma-4-12B-OBLITERATED_Q4_K_M_20261104T152954Z.json",
+        "privacy_core4_product_hf.co_OBLITERATUS_Gemma-4-12B-OBLITERATED_Q4_K_M_20261104T154604Z.json",
+        "trust_core4_product_hf.co_OBLITERATUS_Gemma-4-12B-OBLITERATED_Q4_K_M_20261104T160350Z.json",
+        "privacy_core4_gpt-oss_20b_20261104T161857Z.json",
+        "trust_core4_gpt-oss_20b_20261104T162616Z.json",
+        "privacy_core4_product_gpt-oss_20b_20261104T163523Z.json",
+        "trust_core4_product_gpt-oss_20b_20261104T164256Z.json"
+      ],
+      "plan": {
+        "models": [
+          "llama3.2:1b",
+          "nemotron-3-nano:4b",
+          "qwen3-8b-ft-agentic-v1:latest",
+          "hf.co/deepreinforce-ai/Ornith-1.0-9B-GGUF:latest",
+          "hf.co/OBLITERATUS/Gemma-4-12B-OBLITERATED:Q4_K_M",
+          "gpt-oss:20b"
+        ],
+        "packs": [
+          "privacy",
+          "trust"
+        ],
+        "profiles": [
+          "core4",
+          "core4_product"
+        ],
+        "timing_only": [
+          "gpt-oss:20b"
+        ]
+      }
+    },
+    {
+      "run": "INJ 61fb534",
+      "gate": "INJ",
+      "batch": "INJ 61fb534",
+      "code": "61fb534",
+      "source": "state/runs/x5_61fb534/summary_20261104T182725Z.json (gate_run --tag x5_61fb534, ok rows); frozen 2026-11-04 in X6",
+      "files": [
+        "injection_core4_llama3.2_1b_20261104T165131Z.json",
+        "injection_core4_qwen3-8b-ft-agentic-v1_latest_20261104T165812Z.json",
+        "injection_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261104T170509Z.json"
+      ],
+      "plan": {
+        "models": [
+          "llama3.2:1b",
+          "qwen3-8b-ft-agentic-v1:latest",
+          "hf.co/deepreinforce-ai/Ornith-1.0-9B-GGUF:latest"
+        ],
+        "packs": [
+          "injection"
+        ],
+        "profiles": [
+          "core4"
+        ]
+      }
+    },
+    {
+      "run": "LONG 61fb534",
+      "gate": "LONG",
+      "batch": "LONG 61fb534",
+      "code": "61fb534",
+      "source": "state/runs/x5_61fb534/summary_20261104T182725Z.json (gate_run --tag x5_61fb534, ok rows); frozen 2026-11-04 in X6",
+      "files": [
+        "long_core4_product_llama3.2_1b_20261104T171249Z.json",
+        "long_core4_product_nemotron-3-nano_4b_20261104T172459Z.json",
+        "long_core4_product_qwen3-8b-ft-agentic-v1_latest_20261104T174223Z.json",
+        "long_core4_product_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261104T180122Z.json"
+      ]
+    }
+  ],
+  "void": [
+    {
+      "file": "work_core4_qwen3-8b-ft-agentic-v1_latest_20261031T154711Z.json",
+      "reason": "overlapped the S8h full suite / G2 (2026-10-31 15:45–16:18Z); host_change entries are other runs' `_trials` folders — contamination, not escapes; re-run alone 2026-10-31 19:09–19:58Z"
+    },
+    {
+      "file": "trust_core4_qwen3-8b-ft-agentic-v1_latest_20261031T155631Z.json",
+      "reason": "overlapped the S8h full suite / G2 (2026-10-31 15:45–16:18Z); host_change entries are other runs' `_trials` folders — contamination, not escapes; re-run alone 2026-10-31 19:09–19:58Z"
+    },
+    {
+      "file": "privacy_core4_qwen3-8b-ft-agentic-v1_latest_20261031T160411Z.json",
+      "reason": "overlapped the S8h full suite / G2 (2026-10-31 15:45–16:18Z); host_change entries are other runs' `_trials` folders — contamination, not escapes; re-run alone 2026-10-31 19:09–19:58Z"
+    },
+    {
+      "file": "work_core4_hf.co_deepreinforce-ai_Ornith-1.0-9B-GGUF_latest_20261031T160953Z.json",
+      "reason": "overlapped the S8h full suite / G2 (2026-10-31 15:45–16:18Z); host_change entries are other runs' `_trials` folders — contamination, not escapes; re-run alone 2026-10-31 19:09–19:58Z"
+    },
+    {
+      "file": "g2_podman_20261031T154531Z.json",
+      "reason": "overlapped the S8h full suite / G2 (2026-10-31 15:45–16:18Z); host_change entries are other runs' `_trials` folders — contamination, not escapes; re-run alone 2026-10-31 19:09–19:58Z"
+    },
+    {
+      "file": "g2_docker_20261031T154531Z.json",
+      "reason": "overlapped the S8h full suite / G2 (2026-10-31 15:45–16:18Z); host_change entries are other runs' `_trials` folders — contamination, not escapes; re-run alone 2026-10-31 19:09–19:58Z"
+    }
+  ]
+}
