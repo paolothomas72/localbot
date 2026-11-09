@@ -18,6 +18,12 @@ Two layers, both driven by ``loop.exec_core4`` for ``bash``:
   the workspace was deleted by the step: the loop restores the step from its snapshot and
   vetoes it. The same bytes at a new path is a move: allowed, and the new path is protected
   from then on (so ``mv a.txt sub/`` then ``rm sub/a.txt`` is still a delete).
+
+C8 / C10 (the chat only, ``ask_moves``): a move is asked before the command (its shown destination is
+the real one, ``_mv_dest``) and a yes is for that place only; ``ln -f`` / ``dd of=`` over a protected
+file and ``chmod`` of one are asked before the command (``_c10_targets``); an unpack, ``dd`` or a link
+that the text did not name is found after the step (``rewrites``, a link at the file's name) and asked
+as a replace. Without the hook (exam, gate, LONG) none of this runs.
 """
 from __future__ import annotations
 
@@ -26,8 +32,11 @@ import os
 import re
 import shlex
 from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Callable
 
 from localbot.guard.undo import Snapshot, UndoError, file_sha
+from localbot.guard.workspace_fs import WorkspaceError, extended_path
 
 DELETE_MSG = ("harness: Deleting existing files needs the user's OK. Don't delete. Tell the user "
               "which files you would remove and ask whether to delete or move them.")
@@ -376,6 +385,210 @@ def bash_delete_targets(cmd: str, protected: set[str]) -> list[str]:
     return sorted(_command_targets(cmd, protected))
 
 
+UNKNOWN_DEST = " (a folder or a new name)"  # C10: shown after a target that is not there before the command
+Probe = Callable[[str], "bool | None"]  # C10: what is at a workspace path now (see ``dir_probe``)
+MoveDest = tuple[str, frozenset]  # C10: (the shown destination, the real paths a yes allows; casefolded)
+
+
+def dir_probe(root) -> Probe:
+    """C10: what is at a workspace-relative path now: True a folder, False something else, None nothing there
+    (or a path the disk cannot answer for). Used for the shown move destination only; the post-step check,
+    not this look, decides what the step did."""
+    def probe(rel: str) -> bool | None:
+        try:
+            p = extended_path(Path(root) / rel) if rel else Path(root)
+            if not os.path.lexists(p):
+                return None
+            return os.path.isdir(p)
+        except (OSError, ValueError):
+            return None
+    return probe
+
+
+def _rel_text(op: str) -> str | None:
+    """A workspace path operand as text (``./docs/`` -> ``docs``, ``/work/x`` -> ``x``, backslashes as
+    slashes, the root as ``""``); None for what cannot be placed (see ``_operand_parts``)."""
+    parts = _operand_parts(op.replace("\\", "/"))
+    return None if parts is None else "/".join(parts)
+
+
+def _mv_dest(src: str, target: str, as_dir: bool, as_name: bool, probe: Probe | None, cd: bool) -> MoveDest:
+    """Where ``mv`` would put ``src`` (C10): the shown destination and the real paths a yes allows. ``-t``, several
+    sources or a trailing slash: inside the folder; ``-T``: a rename. Otherwise what is there now decides (a
+    folder: inside it; a file: over it). Nothing there yet, a ``cd`` in the command or an operand we cannot
+    place: it cannot be known before the command runs, so both are allowed and the question says so."""
+    name = src.rstrip("/").split("/")[-1]
+    rel = _rel_text(target)
+    t = rel if rel is not None else target.replace("\\", "/").rstrip("/")
+    inside = f"{t}/{name}" if t else name
+    if as_name:
+        shown, ok = t, {t}
+    elif as_dir:
+        shown, ok = inside, {inside}
+    else:
+        state = probe(rel) if probe is not None and rel is not None and not cd else None
+        if state is True:
+            shown, ok = inside, {inside}
+        elif state is False:
+            shown, ok = t, {t}
+        else:
+            shown, ok = t + UNKNOWN_DEST, {t, inside}
+    return shown, frozenset(x.casefold() for x in ok)
+
+
+def _mv_move_pairs(args: list[str], protected: set[str], cd: bool, probe: Probe | None = None) -> dict[str, MoveDest]:
+    """Protected sources a real ``mv`` (not to ``/dev/null``) would move, mapped to destinations."""
+    opts, ops = _split_opts(args, {"-t", "-S", "--suffix", "--target-directory"})
+    target = None
+    as_dir = False  # -t / --target-directory always name a directory
+    as_name = any(o in ("-T", "--no-target-directory") for o in opts)  # C10: -T is always a rename
+    for j, a in enumerate(args):
+        if a == "-t" and j + 1 < len(args):
+            target = args[j + 1]
+            as_dir = True
+        elif a.startswith("--target-directory="):
+            target = a.split("=", 1)[1]
+            as_dir = True
+    if target is None:
+        if len(ops) < 2:
+            return {}
+        target, ops = ops[-1], ops[:-1]
+    if target == "/dev/null":
+        return {}
+    sources = _match_operands(ops, protected, False, cd)
+    # directory dest: -t, trailing slash, or several sources (last operand is the dir)
+    as_dir = as_dir or len(ops) > 1 or target.endswith("/") or target.endswith("\\")
+    return {src: _mv_dest(src, target, as_dir, as_name and not as_dir, probe, cd) for src in sources}
+
+
+def _command_move_pairs(cmd: str, protected: set[str], depth: int = 0,
+                        probe: Probe | None = None) -> dict[str, MoveDest]:
+    """Protected file moves named by ``cmd`` (``mv``, ``git mv``, globs, braces); not ``/dev/null``."""
+    if not protected:
+        return {}
+    segments = _segments(cmd)
+    if not segments:
+        return {}
+    cd = any(_verb(seg)[0] in ("cd", "pushd", "popd") for seg in segments)
+    out: dict[str, MoveDest] = {}
+    for seg in segments:
+        verb, args = _verb(_drop_redirects(seg))
+        if verb == "mv":
+            out.update(_mv_move_pairs(args, protected, cd, probe))
+        elif verb == "git":
+            i = 0
+            while i < len(args) and args[i].startswith("-"):
+                i += 2 if args[i] in _GIT_ARG else 1
+            if i < len(args) and args[i] == "mv":
+                out.update(_mv_move_pairs(args[i + 1:], protected, cd, probe))
+        elif depth < 3 and verb in _SHELLS and "-c" in args:
+            j = args.index("-c")
+            if j + 1 < len(args):
+                out.update(_command_move_pairs(args[j + 1], protected, depth + 1, probe))
+        elif depth < 3 and verb == "eval":
+            out.update(_command_move_pairs(" ".join(args), protected, depth + 1, probe))
+    return out
+
+
+def bash_move_pairs(cmd: str, protected: set[str], probe: Probe | None = None) -> dict[str, MoveDest]:
+    """C10: protected files this bash command would move (not delete), src -> (shown destination, the real
+    paths a yes allows), as far as the text and ``probe`` (what is on the disk now) show."""
+    return {s: d for s, d in sorted(_command_move_pairs(cmd, protected, probe=probe).items())}
+
+
+def bash_move_targets(cmd: str, protected: set[str], probe: Probe | None = None) -> dict[str, str]:
+    """Protected files this bash command would move (not delete), src -> dest as far as the text shows."""
+    return {s: d[0] for s, d in bash_move_pairs(cmd, protected, probe).items()}
+
+
+# --- C10: the other ways to change an existing file (the chat only) --------------------------------------
+
+_LN_ARG = {"-t", "-S", "--suffix", "--target-directory"}
+_CHMOD_MODE = re.compile(r"-[rwxXst]+$")  # ``chmod -w f``: a mode that looks like an option
+_REWRITERS = {"tar", "unzip", "dd"}  # may write files their text does not name (an unpack, ``of=$f``)
+
+
+def _ln_targets(args: list[str], protected: set[str], cd: bool, probe: Probe | None) -> set[str]:
+    """Protected files ``ln -f`` would replace with a link: the link names. Without ``-f`` an existing name is
+    an error, so nothing is replaced."""
+    opts, ops = _split_opts(args, _LN_ARG)
+    if not any(o in ("-f", "--force") or (not o.startswith("--") and "f" in o[1:]) for o in opts):
+        return set()
+    target_dir = None
+    for j, a in enumerate(args):
+        if a in ("-t", "--target-directory") and j + 1 < len(args):
+            target_dir = args[j + 1]
+        elif a.startswith("--target-directory="):
+            target_dir = a.split("=", 1)[1]
+
+    def into(folder: str, names: list[str]) -> list[str]:
+        return [f"{folder.rstrip('/')}/{os.path.basename(n.rstrip('/'))}" for n in names]
+
+    if target_dir is not None:
+        names = into(target_dir, ops)
+    elif any(o in ("-T", "--no-target-directory") for o in opts):
+        names = ops[1:2]
+    elif len(ops) >= 3:
+        names = into(ops[-1], ops[:-1])
+    elif len(ops) == 2:
+        link, rel = ops[1], _rel_text(ops[1])
+        is_dir = link.endswith("/") or (probe is not None and rel is not None and not cd and probe(rel) is True)
+        names = into(link, ops[:1]) if is_dir else [link]
+    elif len(ops) == 1:
+        names = [os.path.basename(ops[0].rstrip("/"))]
+    else:
+        names = []
+    return _match_operands(names, protected, False, cd)
+
+
+def _dd_targets(args: list[str], protected: set[str], cd: bool) -> set[str]:
+    """Protected files ``dd of=`` would write over."""
+    return _match_operands([a[3:] for a in args if a.startswith("of=")], protected, False, cd)
+
+
+def _chmod_targets(args: list[str], protected: set[str], cd: bool) -> set[str]:
+    """Protected files a ``chmod`` names: the operands after the mode (``--reference`` or a mode that looks like
+    an option, ``-w``, means every operand is a file); ``-R`` reaches the files under a folder."""
+    opts, ops = _split_opts(args, {"--reference"})
+    by_option = any(o.startswith("--reference") or _CHMOD_MODE.match(o) for o in opts)
+    recursive = any(o == "--recursive" or (not o.startswith("--") and "R" in o) for o in opts)
+    return _match_operands(ops if by_option else ops[1:], protected, recursive, cd)
+
+
+def _c10_targets(cmd: str, protected: set[str], probe: Probe | None = None,
+                 depth: int = 0) -> tuple[set[str], set[str], bool]:
+    """(the protected files a link or ``dd`` would replace, the ones a ``chmod`` names, whether the command may
+    rewrite files its text does not name: ``tar``, ``unzip``, ``dd``), as far as the text shows."""
+    replaces: set[str] = set()
+    perms: set[str] = set()
+    rewrites = False
+    segments = _segments(cmd) if protected else None
+    if not segments:
+        return replaces, perms, rewrites
+    cd = any(_verb(seg)[0] in ("cd", "pushd", "popd") for seg in segments)
+    for seg in segments:
+        verb, args = _verb(_drop_redirects(seg))
+        if verb == "ln":
+            replaces |= _ln_targets(args, protected, cd, probe)
+        elif verb == "dd":
+            replaces |= _dd_targets(args, protected, cd)
+        elif verb == "chmod":
+            perms |= _chmod_targets(args, protected, cd)
+        rewrites = rewrites or verb in _REWRITERS
+        sub = None
+        if depth < 3 and verb in _SHELLS and "-c" in args:
+            j = args.index("-c")
+            sub = args[j + 1] if j + 1 < len(args) else None
+        elif depth < 3 and verb == "eval":
+            sub = " ".join(args)
+        if sub is not None:
+            r, p, w = _c10_targets(sub, protected, probe, depth + 1)
+            replaces |= r
+            perms |= p
+            rewrites = rewrites or w
+    return replaces, perms, rewrites
+
+
 # --- the post-step check --------------------------------------------------------------------
 
 
@@ -419,10 +632,16 @@ class DeleteCheck:
     wiped: list[str] = field(default_factory=list)  # S8e: non-empty before the step, 0 bytes after
     overwritten: list[str] = field(default_factory=list)  # S8e: a moved file replaced it; old bytes nowhere
     kept: dict[str, str] = field(default_factory=dict)  # S8e: a moved file replaced it; old bytes here
+    ask_moves: bool = False  # C8: when the ask hook is given, a move is a hit (restore + ask)
+    # C8b: files the person said yes to moving in this step -> C10: the real paths (casefolded) that yes allows
+    move_ok: dict = field(default_factory=dict)
 
     @property
     def hit(self) -> bool:
-        return bool(self.deleted or self.unstored or self.wiped or self.overwritten)
+        if self.deleted or self.unstored or self.wiped or self.overwritten:
+            return True
+        # C10: a yes is for the shown place only; a file that landed elsewhere was moved without one
+        return bool(self.ask_moves and any(q.casefold() not in self.move_ok.get(p, ()) for p, q in self.moved.items()))
 
 
 @dataclass
@@ -432,20 +651,81 @@ class DeletePolicy:
 
     protected: set[str]
     attempted: bool = False
-    targets: list[str] = field(default_factory=list)  # the last pre-check's named files
+    targets: list[str] = field(default_factory=list)  # the last pre-check's named files (deletes + moves)
+    target_whys: list[str] = field(default_factory=list)  # parallel to targets: "delete" or "move"
+    move_dests: dict[str, str] = field(default_factory=dict)  # C8: src -> dest for named moves
+    # C2: files the person said may go in the current step ("delete"); the loop clears this around every step.
+    allow: set[str] = field(default_factory=set)
+    last: DeleteCheck | None = None  # C2: what the latest ``check`` found (the loop reads it after the step)
+    _allowed_gone: list[str] = field(default_factory=list)  # allowed files the latest check found gone
+    ask_moves: bool = False  # C8: set when the ask hook is given; moves become hits for after_step
+    # C8b: files the person said yes to moving in this step. Unlike ``allow`` they stay guarded: the
+    # post-step check still finds where their bytes went (protection follows them) or that they are gone.
+    # C10: src -> the real paths (casefolded) that yes allows; anywhere else is a move nobody said yes to.
+    allow_move: dict[str, frozenset] = field(default_factory=dict)
+    move_ok_dests: dict[str, frozenset] = field(default_factory=dict)  # C10: the last pre-check's, per source
+    # C10: the last pre-check saw a command that may rewrite files its text does not name (tar, unzip, dd):
+    # a protected file whose bytes changed in that step was written over, not edited. The chat only.
+    rewrites: bool = False
 
-    def precheck(self, cmd: str) -> bool:
-        """True (and ``attempted``) if the command names a protected file to delete."""
-        self.targets = bash_delete_targets(cmd, self.protected)
-        if self.targets:
+    def precheck(self, cmd: str, probe: Probe | None = None) -> bool:
+        """True (and ``attempted``) if the command names a protected file to delete or (C8) to move; with the
+        ask hook (C10) also one to replace (``ln -f``, ``dd of=``) or ``chmod``. ``probe`` (what is on the disk
+        now) makes the shown move destination the real one."""
+        deletes = bash_delete_targets(cmd, self.protected)
+        moves = bash_move_pairs(cmd, self.protected, probe)
+        self.move_dests = {s: d[0] for s, d in moves.items()}
+        self.move_ok_dests = {s: d[1] for s, d in moves.items()}
+        # deletes first (stable), then moves not already listed as deletes
+        paths = list(deletes) + [p for p in moves if p not in deletes]
+        whys = ["delete" if p in deletes else "move" for p in paths]
+        # C10: the chat only; exam / gate / LONG keep the C8 list and run exactly as before. One assignment per
+        # step: ``rewrites`` is this command's, never an earlier one's.
+        replaces, perms, self.rewrites = (_c10_targets(cmd, self.protected, probe) if self.ask_moves
+                                          else (set(), set(), False))
+        for group, why in ((replaces, "replace"), (perms, "permissions")):
+            for p in sorted(group):
+                if p not in paths:
+                    paths.append(p)
+                    whys.append(why)
+        self.targets = paths
+        self.target_whys = whys
+        # C8: a move alone is not a delete_attempt when there is no ask hook (exam golden).
+        if deletes or (self.ask_moves and len(paths) > len(deletes)):
             self.attempted = True
         return bool(self.targets)
 
+    def allow_moves(self, paths) -> None:
+        """C8b / C10: the person said yes to moving these in this step. They stay guarded, and a yes is for the
+        place the question showed: the real paths named at the pre-check."""
+        for p in paths:
+            self.allow_move[p] = self.move_ok_dests.get(p, frozenset())
+
     def is_protected(self, rel: str) -> bool:
         """``rel`` (as the model spelled it) names a protected file; NTFS is case-insensitive."""
-        return rel in self.protected or rel.casefold() in {p.casefold() for p in self.protected}
+        live = self.protected - self.allow  # C2: a file the person allowed for this step is not guarded now
+        return rel in live or rel.casefold() in {p.casefold() for p in live}
 
     def check(self, snap: Snapshot, scanned, changed: list[str] | None = None) -> DeleteCheck:
+        out = self._check(snap, scanned, changed)
+        self.last = out
+        self._allowed_gone = [p for p in self.allow if p not in scanned[0]]
+        return out
+
+    def relocate(self, old: str, new: str) -> None:
+        """C2: the harness moved a protected file: it stays protected, at its new path."""
+        self.protected.discard(old)
+        self.protected.add(new)
+
+    def protect(self, rel: str) -> None:
+        """C2b: the harness made a copy of a protected file: the copy is protected too."""
+        self.protected.add(rel)
+
+    def forget(self, rel: str) -> None:
+        """C2: the person said delete, and the harness did: the file is no longer protected."""
+        self.protected.discard(rel)
+
+    def _check(self, snap: Snapshot, scanned, changed: list[str] | None = None) -> DeleteCheck:
         """Compare the tree after the step (``scanned`` = ``undo.scan`` of it) with the protected
         files and the pre-step snapshot. A hard-linked protected file is not gone (its bytes are
         still at its name); a link, folder or nothing at its name is.
@@ -458,8 +738,9 @@ class DeletePolicy:
         at a new path it is lost. ``changed`` (from ``changed_since``) limits the overwrite test
         to files whose bytes changed; None tests every protected file."""
         files, _dirs, skipped = scanned
-        gone = sorted(p for p in self.protected if p not in files and skipped.get(p) != "hard link")
-        present = sorted(p for p in self.protected if p in files)
+        live = self.protected - self.allow  # C2: the files the person allowed in this step are left out
+        gone = sorted(p for p in live if p not in files and skipped.get(p) != "hard link")
+        present = sorted(p for p in live if p in files)
         def changed_bytes(p: str) -> bool:  # a blank file is <= 64 bytes: the sha is cheap
             was = snap.files.get(p)
             if was is None or was[1] != files[p].st.st_size:
@@ -476,7 +757,7 @@ class DeletePolicy:
         maybe = [p for p in present if p not in wiped and p in snap.files
                  and (changed is None or p in changed)]
         if not gone and not wiped and not maybe:
-            return DeleteCheck([], [], {})
+            return DeleteCheck([], [], {}, ask_moves=self.ask_moves, move_ok=dict(self.allow_move))
         unstored = [p for p in gone if p not in snap.files] + [p for p in wiped if p not in snap.files]
         wiped = [p for p in wiped if p in snap.files]
         by_size: dict[int, list[str]] = {}
@@ -504,26 +785,31 @@ class DeletePolicy:
 
         moved: dict[str, str] = {}
         deleted: list[str] = []
+        kept: dict[str, str] = {}
+        overwritten: list[str] = []
         for p in gone:
             if p not in snap.files:
                 continue
             q = holder(*snap.files[p])
-            if q is None:
-                deleted.append(p)
-            else:
+            if q is not None:
                 moved[p] = q
-        kept: dict[str, str] = {}
-        overwritten: list[str] = []
+            elif self.ask_moves and skipped.get(p) == "link":
+                overwritten.append(p)  # C10 (the chat): a link now at its name replaced the file
+            else:
+                deleted.append(p)
         for p in maybe:
             now = sha(p)
-            if now is None or now == snap.files[p][0] or not (pre_names.get(now, set()) - {p}):
-                continue  # unchanged, or new bytes that are no OTHER file's: an ordinary edit
+            if now is None or now == snap.files[p][0]:
+                continue  # unchanged
+            if not (pre_names.get(now, set()) - {p}) and not (self.rewrites and self.ask_moves):
+                continue  # new bytes that are no OTHER file's: an ordinary edit (C10: unless an unpack or dd step)
             q = holder(*snap.files[p])  # its own old bytes still somewhere (moved aside): a move
             if q is None:
                 overwritten.append(p)
             else:
                 kept[p] = q
-        return DeleteCheck(deleted, unstored, moved, wiped, overwritten, kept)
+        return DeleteCheck(deleted, unstored, moved, wiped, overwritten, kept, ask_moves=self.ask_moves,
+                           move_ok=dict(self.allow_move))
 
     def accept(self, result: DeleteCheck) -> None:
         """The step stands: a moved file is protected at its new path, and so are the old bytes
@@ -532,3 +818,73 @@ class DeletePolicy:
             self.protected.discard(old)
             self.protected.add(new)
         self.protected.update(result.kept.values())
+        for p in self._allowed_gone:  # C2: the step stands, so a file the person let go is gone for good
+            self.protected.discard(p)
+        self._allowed_gone = []
+
+
+# --- C2: what the harness does when the person answers "delete" or "move" ---------------------------
+
+MOVED_DIR = "_moved"
+
+
+def moved_name(fs, rel: str) -> str:
+    """Where ``rel`` goes: ``_moved/<rel>``; if that name is taken, ``.1``, ``.2`` and so on. Nothing is
+    ever overwritten (the test is the disk's own, so NTFS case rules apply)."""
+    base = f"{MOVED_DIR}/{rel}"
+    cand, n = base, 0
+    while os.path.lexists(extended_path(fs.root / cand)):
+        n += 1
+        cand = f"{base}.{n}"
+    return cand
+
+
+def apply_move(fs, old: str, new: str) -> None:
+    """C8: move workspace file ``old`` to ``new`` through the workspace layer (harness re-apply after ask)."""
+    src = fs.resolve(old)
+    dst = fs.resolve(new)
+    os.makedirs(extended_path(dst.parent), exist_ok=True)
+    if extended_path(dst).exists():
+        raise WorkspaceError(f"refusing to overwrite {new}")
+    os.rename(extended_path(src), extended_path(dst))
+
+
+def move_aside(fs, rel: str) -> str:
+    """Move the file ``rel`` to ``_moved/<rel>`` (folders kept) through the workspace layer; return the new
+    workspace path. Both names are validated by ``fs.resolve`` (a link, a hard link or a bad name raises
+    ``WorkspaceError``); the move itself is a plain rename on the same disk."""
+    src = fs.resolve(rel)
+    new = moved_name(fs, rel)
+    dst = fs.resolve(new)
+    os.makedirs(extended_path(dst.parent), exist_ok=True)
+    os.rename(extended_path(src), extended_path(dst))
+    return new
+
+
+def copy_aside(fs, rel: str) -> str:
+    """C2b: copy the file ``rel`` to ``_moved/<rel>`` (same name rules as ``move_aside``, never overwriting) and
+    leave the original where it is; return the new workspace path. Both names are validated by ``fs.resolve``.
+    A copy that fails half way is removed again (it is our own new file)."""
+    src = fs.resolve(rel)
+    new = moved_name(fs, rel)
+    dst = fs.resolve(new)
+    os.makedirs(extended_path(dst.parent), exist_ok=True)
+    try:
+        with open(extended_path(src), "rb") as fin, open(extended_path(dst), "xb") as fout:
+            while True:
+                chunk = fin.read(1 << 20)
+                if not chunk:
+                    break
+                fout.write(chunk)
+    except OSError:
+        try:
+            os.remove(extended_path(dst))
+        except OSError:
+            pass
+        raise
+    return new
+
+
+def remove_file(fs, rel: str) -> None:
+    """Delete the file ``rel`` through the workspace layer (``WorkspaceError`` / ``OSError`` on a refusal)."""
+    os.remove(extended_path(fs.resolve(rel)))

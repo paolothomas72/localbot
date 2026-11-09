@@ -50,7 +50,23 @@ def main(argv: list[str] | None = None, *, quiet: Callable[[], bool] | None = No
     u.add_argument("bot")
     u.add_argument("steps", nargs="?", type=int, default=1)
     u.add_argument("--list", action="store_true", help="list the snapshots, change nothing")
+    c = sub.add_parser("chat", help="talk to a bot that works in its own folder (needs Ollama and Podman or Docker)")
+    c.add_argument("--bot", default="main", help="the bot's name (letters, digits, - and _); default: main")
+    c.add_argument("--model", default=None, help="an installed Ollama model; without it you pick from a list")
+    c.add_argument("--reply-limit", type=int, default=None, metavar="N",
+                   help="most tokens the model may write in one step, thinking included (default 1024)")
+    c.add_argument("--context", type=int, default=None, metavar="N",
+                   help="tokens the model holds for the whole chat (default 8192); must be above the reply limit")
+    c.add_argument("--steps", type=int, default=None, metavar="N",
+                   help="most steps the bot may take for one message of yours (default 12, at most 25)")
+    c.add_argument("--think", choices=("on", "off"), default=None,
+                   help="switch the model's thinking on or off; without it Ollama's own default is used")
     a = ap.parse_args(argv)
+    if a.cmd == "chat":
+        from . import chat  # looked up at call time, so the chat's code is only loaded when it is used
+        given = {k: v for k, v in (("reply_limit", a.reply_limit), ("context", a.context), ("steps", a.steps),
+                                   ("think", None if a.think is None else a.think == "on")) if v is not None}
+        return chat.chat_main(a.bot, a.model, **given)
     cfg = cfg or UndoConfig()
     try:
         store = UndoStore.open_existing(cfg, a.bot)

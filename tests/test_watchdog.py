@@ -26,7 +26,7 @@ class FakeClock:
 def test_reason_codes_are_the_spec_list():
     assert END_REASONS == ("done", "max_steps", "task_timeout", "trial_deadline", "stuck",
                            "repetition", "provider_error", "parse_fail", "undo_unsafe", "git_changed",
-                           "work_quota", "exec_failed")
+                           "work_quota", "exec_failed", "next_user_error")
 
 
 def test_time_left_picks_the_binding_clock():

@@ -147,8 +147,10 @@ class ChatResult:
         }
 
 
-def lab_chat_body(cfg: ProviderConfig, model: str, messages: list, tools: list | None) -> dict:
-    """The lab's request body, field for field (ollama_chat.chat)."""
+def lab_chat_body(cfg: ProviderConfig, model: str, messages: list, tools: list | None,
+                  think: bool | None = None) -> dict:
+    """The lab's request body, field for field (ollama_chat.chat). ``think`` (C6, ``localbot chat --think``) adds
+    Ollama's ``think`` field; None (the default) sends none, exactly as before."""
     body: dict = {
         "model": model,
         "stream": cfg.stream,
@@ -162,6 +164,8 @@ def lab_chat_body(cfg: ProviderConfig, model: str, messages: list, tools: list |
     }
     if tools:
         body["tools"] = tools
+    if think is not None:
+        body["think"] = bool(think)
     return body
 
 
@@ -198,6 +202,7 @@ class OllamaProvider:
                  clock: Callable[[], float] = time.perf_counter,
                  sleep: Callable[[float], None] = time.sleep) -> None:
         self.cfg = cfg
+        self.think: bool | None = None  # C6: set by ``localbot chat --think``; None = no ``think`` field is sent
         self.transport = transport or urllib_transport
         self.clock = clock
         self.sleep = sleep
@@ -208,7 +213,7 @@ class OllamaProvider:
 
     def chat(self, model: str, messages: list, tools: list | None, timeout: float,
              first_turn: bool = False) -> ChatResult:
-        body = lab_chat_body(self.cfg, model, messages, tools)
+        body = lab_chat_body(self.cfg, model, messages, tools, think=self.think)
         attempts, infra_retry, last_exc, last_text = 0, False, None, ""
         http500_left, conn_left = self.cfg.retries_on_http_500, self.cfg.retries_on_connection_error
         pause = self.cfg.retry_backoff_s

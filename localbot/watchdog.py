@@ -22,7 +22,8 @@ from localbot.provider.ollama import ProviderTimeout
 
 END_REASONS = ("done", "max_steps", "task_timeout", "trial_deadline", "stuck", "repetition",
                "provider_error", "parse_fail", "undo_unsafe", "git_changed",
-               "work_quota", "exec_failed")  # H1-I item 7: the sandbox stopped a step (undone first)
+               "work_quota", "exec_failed",  # H1-I item 7: the sandbox stopped a step (undone first)
+               "next_user_error")  # C1b: the chat's next-message hook failed
 
 STUCK_NUDGE = ("harness: you made the same {name} call {n} times and got the same result each time. "
                "Do something different, or finish.")

@@ -348,7 +348,9 @@ def _say(out: list[str], err: list[str], stream: str, text: str) -> None:
     (out if stream == "out" else err).append(text)
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None, before_pack=None) -> int:
+    """``before_pack(row)`` (C18b, optional): called right before each launch. A non-empty string it returns is the
+    reason to skip that row: nothing is launched, the row is recorded as SKIPPED. ``None`` changes nothing."""
     global LAST_STDOUT, LAST_STDERR
     import argparse
     out: list[str] = []
@@ -374,6 +376,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--history", action="append", default=None)
     parser.add_argument("--tag", default=None)
     parser.add_argument("--python", default=sys.executable)
+    parser.add_argument(
+        "--assume-locked",
+        action="store_true",
+        help="parent already holds the run lock; skip acquire when LOCALBOT_RUNLOCK_HELD is set",
+    )
     args = parser.parse_args(argv)
     try:
         rows = load_plan(args.plan)
@@ -402,11 +409,17 @@ def main(argv: list[str] | None = None) -> int:
     if not _commit_matches(head, args.commit):
         _say(out, err, "err", f"STOP: HEAD is {head or 'unknown'}, not {args.commit}. Nothing ran.")
         return finish(2)
-    try:
-        lock = runlock.acquire("gate_run", cmd=["gate_run", args.tag or ""])
-    except runlock.LockBusy as exc:
-        _say(out, err, "err", f"STOP: busy: {runlock.describe(exc.holder)}. Nothing ran.")
-        return finish(3)
+    # Optional --assume-locked: parent already holds the run lock (model_queue / runlock run).
+    # When the flag is absent, behaviour is unchanged (always acquire).
+    lock = None
+    if args.assume_locked and runlock.held_by_parent():
+        lock = None
+    else:
+        try:
+            lock = runlock.acquire("gate_run", cmd=["gate_run", args.tag or ""])
+        except runlock.LockBusy as exc:
+            _say(out, err, "err", f"STOP: busy: {runlock.describe(exc.holder)}. Nothing ran.")
+            return finish(3)
     try:
         if not gpu_visible():
             _say(out, err, "err", "STOP: the GPU is not visible (nvidia-smi failed). Nothing ran.")
@@ -439,6 +452,18 @@ def main(argv: list[str] | None = None) -> int:
                 recorded.append({**_public_row(row), "status": "SKIPPED", "result": reason,
                                  "digest_seen": seen})
                 continue
+            skip_reason = before_pack(row) if before_pack is not None else None
+            if skip_reason:
+                text = f"skipped: {skip_reason}"
+                _say(out, err, "out", f"SKIPPED {row['gate']} {row['model']} {row['pack']}: {text}".encode(
+                    "ascii", "replace").decode("ascii"))
+                item = {**_public_row(row), "status": "SKIPPED", "result": text, "digest_seen": seen}
+                recorded.append(item)
+                with journal.open("a", encoding="utf-8", newline="\n") as handle:
+                    handle.write(json.dumps(item) + "\n")
+                    handle.flush()
+                    os.fsync(handle.fileno())
+                continue
             log_path = _free_name(batch, _log_base(tag, row), ".log")
             rc = launch(command_argv(row, args.python), log_path, REPO)
             text = log_path.read_text(encoding="utf-8") if log_path.is_file() else ""
@@ -463,7 +488,8 @@ def main(argv: list[str] | None = None) -> int:
         _say(out, err, "out", _gate_timing_text(recorded))
         return finish(0 if all(r["status"] in {"ok", "SKIPPED"} for r in recorded) or not recorded else 1)
     finally:
-        lock.release()
+        if lock is not None:
+            lock.release()
 
 
 def _public_row(row: dict) -> dict:

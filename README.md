@@ -67,6 +67,8 @@ else `%LOCALAPPDATA%\localbot` on Windows and `$XDG_STATE_HOME/localbot` (defaul
 How Local Bot was tested, every round from the first day to the final run, with the numbers and the
 commands to check them yourself: [docs/EVIDENCE.md](docs/EVIDENCE.md).
 
+Weekly test report #1 (9 Nov 2026): [docs/reports/2026-11-09/REPORT.md](docs/reports/2026-11-09/REPORT.md)
+
 ## Principles
 
 - Evidence first: real command output, n=3 tries per task, "verified" kept apart from "reported".
